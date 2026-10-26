@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Timetable · BunkSmart</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/timetable.css" />
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════════
+     NAVBAR
+═════════════════════════════════════════════════════════════ -->
+<nav class="navbar">
+  <a class="navbar__brand" href="index.html">
+    <span class="navbar__brand-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+           stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+      </svg>
+    </span>
+    BunkSmart
+  </a>
+
+  <ul class="navbar__nav">
+    <li><a href="index.html">Home</a></li>
+    <li><a href="timetable.html" class="active">Timetable</a></li>
+    <li><a href="tracker.html">Tracker</a></li>
+    <li><a href="dashboard.html">Dashboard</a></li>
+  </ul>
+
+  <span class="navbar__clock" id="navbar-clock"></span>
+</nav>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     PAGE HEADER
+═════════════════════════════════════════════════════════════ -->
+<header class="page-header">
+  <div class="container">
+    <div class="header-eyebrow">📅 Weekly Schedule</div>
+    <h1 class="page-header__title">Your Timetable</h1>
+    <p class="page-header__subtitle">All your classes, attendance, and safe skips — in one view.</p>
+    <div class="date-badge" id="header-date">
+      <span class="dot"></span>
+      <span id="date-text">Loading…</span>
+    </div>
+  </div>
+</header>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     MAIN
+═════════════════════════════════════════════════════════════ -->
+<main style="padding: 2.5rem 0 4rem">
+  <div class="container">
+
+    <!-- Stats bar -->
+    <div class="stats-bar" id="stats-bar"></div>
+
+    <!-- Week day chips -->
+    <div class="week-nav">
+      <span class="week-nav__label">Week</span>
+      <div class="week-nav__days" id="week-nav-days"></div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend">
+      <span style="font-size:var(--fs-xs);font-weight:700;color:var(--clr-text-dim);text-transform:uppercase;letter-spacing:.08em">Status</span>
+      <div class="legend__item">
+        <div class="legend__dot" style="background:var(--clr-safe);box-shadow:0 0 5px var(--clr-safe-glow)"></div>Safe ≥75%
+      </div>
+      <div class="legend__item">
+        <div class="legend__dot" style="background:var(--clr-warning);box-shadow:0 0 5px var(--clr-warning-glow)"></div>Warning 60–74%
+      </div>
+      <div class="legend__item">
+        <div class="legend__dot" style="background:var(--clr-danger);box-shadow:0 0 5px var(--clr-danger-glow)"></div>Danger &lt;60%
+      </div>
+      <div class="legend__item" style="margin-left:auto">
+        <span style="font-size:9px;font-weight:700;background:rgba(251,191,36,.2);color:var(--clr-gold);border:1px solid rgba(251,191,36,.3);padding:1px 7px;border-radius:99px;letter-spacing:.05em">TODAY</span>
+        Highlighted column
+      </div>
+    </div>
+
+    <!-- ── Desktop grid ─────────────────────────────────────── -->
+    <div class="section-row">
+      <div>
+        <div class="section-title">Full Week Grid</div>
+        <div class="section-sub">Hover a class to preview · Click to see details</div>
+      </div>
+    </div>
+
+    <div class="timetable-wrap" style="margin-bottom:var(--space-10)">
+      <div class="timetable-grid" id="timetable-grid"></div>
+    </div>
+
+    <!-- ── Day detail view ──────────────────────────────────── -->
+    <div class="section-row">
+      <div>
+        <div class="section-title" id="day-schedule-title">Today's Schedule</div>
+        <div class="section-sub">Click any class card for attendance details</div>
+      </div>
+    </div>
+
+    <div class="schedule-list" id="schedule-list"></div>
+
+  </div>
+</main>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     DETAIL PANEL (bottom sheet)
+═════════════════════════════════════════════════════════════ -->
+<div class="detail-panel" id="detail-panel">
+  <div class="detail-sheet" id="detail-sheet-content"></div>
+</div>
+
+
+<!-- Toast container -->
+<div class="toast-container" id="toast-container"></div>
+
+
+<!-- ════════════════════════════════════════════════════════════
+     SCRIPTS
+═════════════════════════════════════════════════════════════ -->
+<script type="module" src="js/timetable.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BunkSmart · Home</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/variables.css" />
+  <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/index.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════ NAVBAR ══════════════════════════ -->
+<nav class="navbar">
+  <a class="navbar__brand" href="index.html">
+    <span class="navbar__brand-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+           stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+        <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+      </svg>
+    </span>
+    BunkSmart
+  </a>
+  <ul class="navbar__nav">
+    <li><a href="index.html" class="active">Home</a></li>
+    <li><a href="timetable.html">Timetable</a></li>
+    <li><a href="tracker.html">Tracker</a></li>
+    <li><a href="dashboard.html">Dashboard</a></li>
+  </ul>
+  <span class="navbar__clock" id="navbar-clock"></span>
+</nav>
+
+
+<!-- ══════════════════════════ HERO ══════════════════════════ -->
+<section class="hero">
+  <div class="hero-orb hero-orb--1"></div>
+  <div class="hero-orb hero-orb--2"></div>
+  <div class="hero-orb hero-orb--3"></div>
+
+  <div class="container hero-content">
+    <div class="hero-badge">✨ Your smart attendance companion</div>
+
+    <h1 class="hero-title">
+      Never get<br>
+      <span class="hero-title-grad">detained again.</span>
+    </h1>
+
+    <p class="hero-sub">
+      Track attendance, predict safe skips, get alerts before you cross the line —
+      all in one place. Built for students, by students.
+    </p>
+
+    <div class="hero-actions">
+      <a href="timetable.html" class="btn btn--primary btn--lg">📅 View Timetable</a>
+      <a href="tracker.html"   class="btn btn--ghost  btn--lg">📋 Mark Attendance</a>
+    </div>
+
+    <!-- Quick-stat pills -->
+    <div class="hero-pills" id="hero-pills"></div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════ CHARACTERS ══════════════════════════ -->
+<section class="chars-section">
+  <div class="container">
+    <div class="section-eyebrow">Meet the Squad</div>
+    <h2 class="section-heading">Three characters. One mission.</h2>
+    <p class="section-sub">They guide you through every attendance decision.</p>
+
+    <div class="chars-grid">
+
+      <!-- Student -->
+      <div class="char-card char-card--student">
+        <div class="char-bubble">
+          <div class="char-avatar">🧑‍💻</div>
+          <div class="char-ring char-ring--student"></div>
+        </div>
+        <div class="char-name">Alex</div>
+        <div class="char-role">The Student</div>
+        <div class="char-desc">That's you! Asking the real questions — "Can I skip today?" — and dealing with the consequences either way.</div>
+        <div class="char-tag" style="--tag-clr:var(--clr-student)">🎭 Protagonist</div>
+      </div>
+
+      <!-- Tracker -->
+      <div class="char-card char-card--tracker">
+        <div class="char-bubble">
+          <div class="char-avatar">🤖</div>
+          <div class="char-ring char-ring--tracker"></div>
+        </div>
+        <div class="char-name">Trace</div>
+        <div class="char-role">The Tracker</div>
+        <div class="char-desc">Cold, calculated, always watching the numbers. Tells you exactly how many skips you have left — no sugarcoating.</div>
+        <div class="char-tag" style="--tag-clr:var(--clr-tracker)">📊 Data Brain</div>
+      </div>
+
+      <!-- Instructor -->
+      <div class="char-card char-card--instructor">
+        <div class="char-bubble">
+          <div class="char-avatar">👩‍🏫</div>
+          <div class="char-ring char-ring--instructor"></div>
+        </div>
+        <div class="char-name">Prof. Maya</div>
+        <div class="char-role">The Instructor</div>
+        <div class="char-desc">Strict but fair. Reacts when you miss too many classes. Push her too far and detention awaits.</div>
+        <div class="char-tag" style="--tag-clr:var(--clr-instructor)">⚠️ Final Boss</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════ FEATURES ══════════════════════════ -->
+<section class="features-section">
+  <div class="container">
+    <div class="section-eyebrow">What you get</div>
+    <h2 class="section-heading">Built different.</h2>
+
+    <div class="features-grid">
+      <div class="feat-card">
+        <div class="feat-icon">📅</div>
+        <div class="feat-title">Live Timetable</div>
+        <div class="feat-desc">Full 5-day grid with today highlighted, attendance status on every class, and 1-click detail popups.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🧮</div>
+        <div class="feat-title">Smart Predictions</div>
+        <div class="feat-desc">"What if I skip?" tells you instantly. See your attendance drop before you commit to binge-watching.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🔔</div>
+        <div class="feat-title">Pre-Class Alerts</div>
+        <div class="feat-desc">Get notified 5–10 minutes before a low-attendance class. Browser notifications + in-app toast fallback.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">📊</div>
+        <div class="feat-title">Dashboard Overview</div>
+        <div class="feat-desc">Course cards, attendance chart, safe/warning/danger status at a glance. Your progress, visualised.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">💾</div>
+        <div class="feat-title">Offline First</div>
+        <div class="feat-desc">Everything saves to localStorage. No login, no server, no nonsense. Works anywhere.</div>
+      </div>
+      <div class="feat-card">
+        <div class="feat-icon">🎭</div>
+        <div class="feat-title">Character Conversations</div>
+        <div class="feat-desc">Animated characters react to your attendance. Trace goes angry when you're in danger. Prof. Maya… well.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════ CTA ══════════════════════════ -->
+<section class="cta-section">
+  <div class="cta-orb"></div>
+  <div class="container cta-content">
+    <div class="cta-emoji">🚀</div>
+    <h2 class="cta-title">Ready to stop guessing?</h2>
+    <p class="cta-sub">Open your timetable and start tracking. It takes 30 seconds.</p>
+    <div style="display:flex;gap:var(--space-4);justify-content:center;flex-wrap:wrap">
+      <a href="timetable.html" class="btn btn--primary btn--lg">Get Started →</a>
+      <a href="dashboard.html" class="btn btn--ghost  btn--lg">See Dashboard</a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════ FOOTER ══════════════════════════ -->
+<footer class="site-footer">
+  <div class="container">
+    <span>BunkSmart · Made with ☕ and panic · </span>
+    <span style="color:var(--clr-text-dim)">B.Tech CS · FSD Project</span>
+  </div>
+</footer>
+
+
+<!-- Toast -->
+<div class="toast-container" id="toast-container"></div>
+
+<script type="module">
+  import { startClock } from "./js/clock.js";
+  import { COURSES }    from "./js/data.js";
+
+  startClock("navbar-clock");
+
+  // Hero pills — quick stats
+  const pills = document.getElementById("hero-pills");
+  if (pills) {
+    pills.innerHTML = [
+      { icon:"📚", text:`${COURSES.length} subjects tracked` },
+      { icon:"⚡", text:"Instant skip prediction" },
+      { icon:"🔔", text:"Smart pre-class alerts" },
+    ].map(p => `
+      <div class="hero-pill">
+        <span>${p.icon}</span>
+        <span>${p.text}</span>
+      </div>`).join("");
+  }
+</script>
+
+</body>
+</html>
