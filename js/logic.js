@@ -5,6 +5,7 @@
 // ============================================================
 
 import { getRecord, setRecord } from "./storage.js";
+import { getCourse } from "./data.js";
 
 // ──────────────────────────────────────────────────────────────
 // Public API  (agreed function names from the project spec)
@@ -26,7 +27,8 @@ export function getAttendance(courseId) {
  */
 export function getStatus(courseId) {
   const { percent } = getAttendance(courseId);
-  if (percent >= 75) return "safe";
+  const requiredPercent = getCourse(courseId)?.requiredPercent ?? 75;
+  if (percent >= requiredPercent) return "safe";
   if (percent >= 60) return "warning";
   return "danger";
 }
@@ -37,8 +39,8 @@ export function getStatus(courseId) {
  */
 export function getSafeSkips(courseId) {
   const { attended, total } = getAttendance(courseId);
-  // attended / (total + x) >= 0.75  →  x <= attended/0.75 - total
-  return Math.max(0, Math.floor(attended / 0.75 - total));
+  const requiredRate = (getCourse(courseId)?.requiredPercent ?? 75) / 100;
+  return Math.max(0, Math.floor(attended / requiredRate - total));
 }
 
 /**
@@ -56,6 +58,8 @@ export function predictSkip(courseId) {
  * present = true → attended; false → absent
  */
 export function markAttendance(courseId, present) {
+  if (!getCourse(courseId)) throw new Error(`Course ${courseId} was not found.`);
+  if (typeof present !== "boolean") throw new TypeError("Attendance must be marked present or absent.");
   const { attended, total } = getRecord(courseId);
   setRecord(courseId, {
     attended: present ? attended + 1 : attended,
@@ -69,8 +73,7 @@ export function markAttendance(courseId, present) {
  */
 export function classesNeeded(courseId) {
   const { attended, total } = getAttendance(courseId);
-  if (attended / Math.max(total, 1) >= 0.75) return 0;
-  // attended + x / (total + x) >= 0.75
-  // x >= (0.75*total - attended) / 0.25
-  return Math.ceil((0.75 * total - attended) / 0.25);
+  const requiredRate = (getCourse(courseId)?.requiredPercent ?? 75) / 100;
+  if (total > 0 && attended / total >= requiredRate) return 0;
+  return Math.ceil((requiredRate * total - attended) / (1 - requiredRate));
 }

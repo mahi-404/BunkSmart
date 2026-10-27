@@ -4,7 +4,7 @@
 //  Depends on: data.js, clock.js, logic.js
 // ============================================================
 
-import { COURSES, getCourse, TIMETABLE }   from "./data.js";
+import { COURSES, escapeHtml, getCourse, TIMETABLE } from "./data.js";
 import { getAttendance, getStatus,
          getSafeSkips }                    from "./logic.js";
 import { startClock }                      from "./clock.js";
@@ -125,9 +125,9 @@ function renderCourseList() {
         <div class="dcc-icon">${emoji}</div>
 
         <div class="dcc-body">
-          <div class="dcc-name">${course.name}</div>
+          <div class="dcc-name">${escapeHtml(course.name)}</div>
           <div class="dcc-meta">
-            ${course.code} · ${course.instructor} · ${course.credits} cr
+            ${escapeHtml(course.code)} · ${escapeHtml(course.instructor)} · ${course.credits} cr
           </div>
           <div class="dcc-bar-wrap">
             <div class="progress" style="margin-top:6px">
@@ -166,7 +166,7 @@ function renderChart() {
     legendEl.innerHTML = COURSES.map((c, i) => `
       <div class="cl-item">
         <div class="cl-dot" style="background:${c.color};box-shadow:0 0 5px ${c.color}88"></div>
-        <span class="cl-name">${c.code}</span>
+        <span class="cl-name">${escapeHtml(c.code)}</span>
         <span class="cl-pct" style="color:${c.color}">${data[i]}%</span>
       </div>`).join("");
   }

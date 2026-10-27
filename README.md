@@ -27,14 +27,18 @@ Files shared across all members:
 #### 📋 Attendance Logic & Tracker (Person 2)
 - `tracker.html` & `css/tracker.css` — Interactive subject attendance cards with circular rings
 - `js/logic.js` — Attendance brain (`getAttendance`, `getStatus`, `getSafeSkips`, `predictSkip`, `markAttendance`)
-- `js/storage.js` — LocalStorage persistence
-- `js/tracker.js` — Interactive tracker card logic & prediction modal
+- `js/storage.js` — LocalStorage persistence for courses, attendance, and recent history
+- `js/tracker.js` — Course management, attendance actions, skip prediction, and character dialogue
+- `js/data.js` — Shared course data with persisted add/edit/delete support
 
 #### 🎭 Character & Dialogue (Person 1)
-- `index.html` & `css/index.css` — Landing page with student, tracker, and instructor cards
-- *(Person 1 will add `characters.css` & `dialogue.js` on their branch)*
+- `index.html` & `css/index.css` — Landing page portraits for Alex, Trace, and Prof. Maya
+- `Divya.png`, `mahitha.png`, `swetha.png` — Character portraits used across the UI
+- Tracker dialogue builds a live attendance storyline from the selected course and real attendance calculations
 
 ---
+
+The tracker and timetable/dashboard use the same local attendance records. New and edited courses appear across the app after navigation or reload; deleting a course also removes its timetable entries and saved attendance record.
 
 ## 🌿 Git Workflow Rules
 
