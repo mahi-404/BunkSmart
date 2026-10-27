@@ -3,32 +3,10 @@
 //  Person 3 · Depends on data.js + clock.js
 // ============================================================
 
-import { COURSES, TIMETABLE, DAYS, getCourse } from "./data.js";
+import { COURSES, TIMETABLE, DAYS, escapeHtml, getCourse } from "./data.js";
+import { getAttendance, getStatus, getSafeSkips } from "./logic.js";
 import { startClock }                          from "./clock.js";
 import { startNotifications }                  from "./notify.js";
-
-// ── Stub API (swap for real logic.js imports on Day 9) ────────
-function getAttendance(courseId) {
-  const demo = {
-    CS301: { attended: 18, total: 22, percent: 82 },
-    CS302: { attended: 14, total: 20, percent: 70 },
-    CS303: { attended: 10, total: 18, percent: 56 },
-    CS304: { attended: 16, total: 20, percent: 80 },
-    MA201: { attended: 12, total: 16, percent: 75 },
-    CS305: { attended: 9,  total: 14, percent: 64 },
-  };
-  return demo[courseId] || { attended: 0, total: 0, percent: 0 };
-}
-
-function getStatus(id) {
-  const p = getAttendance(id).percent;
-  return p >= 75 ? "safe" : p >= 60 ? "warning" : "danger";
-}
-
-function getSafeSkips(id) {
-  const { attended, total } = getAttendance(id);
-  return Math.max(0, Math.floor(attended / 0.75 - total));
-}
 
 // ── State ──────────────────────────────────────────────────────
 const today      = new Date();
@@ -168,8 +146,8 @@ function renderGrid() {
                  style="background:${course.color}18; border-color:${course.color}35;"
                  onclick="window.openDetail('${sess.courseId}')">
               <div>
-                <div class="cc-code" style="color:${course.color}">${emoji} ${course.code}</div>
-                <div class="cc-name">${course.name}</div>
+                <div class="cc-code" style="color:${course.color}">${emoji} ${escapeHtml(course.code)}</div>
+                <div class="cc-name">${escapeHtml(course.name)}</div>
               </div>
               <div class="cc-foot">
                 <span class="cc-time">${sess.startTime}–${sess.endTime}</span>
@@ -246,15 +224,15 @@ function buildItem(sess) {
       <div class="si-body">
         <div class="si-top">
           <div class="si-name">
-            ${emoji} ${course.name}
+            ${emoji} ${escapeHtml(course.name)}
             ${isLab ? '<span class="badge badge--info" style="font-size:9px">LAB</span>' : ""}
           </div>
           <span class="badge badge--${status}">${se} ${status}</span>
         </div>
 
         <div class="si-meta">
-          <span>🏷 ${course.code}</span>
-          <span>👤 ${course.instructor}</span>
+          <span>🏷 ${escapeHtml(course.code)}</span>
+          <span>👤 ${escapeHtml(course.instructor)}</span>
           <span>📍 ${sess.room}</span>
           <span>💎 ${course.credits} cr</span>
         </div>
@@ -299,8 +277,8 @@ window.openDetail = function(courseId) {
     <div class="sheet-color-bar" style="background:${course.color}"></div>
 
     <div style="font-size:2.5rem;margin-bottom:var(--space-2)">${emoji}</div>
-    <div class="sheet-title">${course.name}</div>
-    <div class="sheet-code">${course.code} · ${course.credits} Credits · ${course.instructor}</div>
+    <div class="sheet-title">${escapeHtml(course.name)}</div>
+    <div class="sheet-code">${escapeHtml(course.code)} · ${course.credits} Credits · ${escapeHtml(course.instructor)}</div>
 
     <!-- Attendance box -->
     <div class="sheet-att-box">
