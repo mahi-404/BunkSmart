@@ -1,42 +1,21 @@
 // ============================================================
-//  timetable.js  ✨ Aesthetic Edition
-//  Person 3 · Depends on data.js + clock.js
+//  timetable.js – Timetable & Live Schedule Engine
+//  Person 3 owns this file.
+//  Fully integrated with logic.js and backend server.
 // ============================================================
 
 import { COURSES, TIMETABLE, DAYS, getCourse } from "./data.js";
 import { startClock }                          from "./clock.js";
 import { startNotifications }                  from "./notify.js";
-
-// ── Stub API (swap for real logic.js imports on Day 9) ────────
-function getAttendance(courseId) {
-  const demo = {
-    CS301: { attended: 18, total: 22, percent: 82 },
-    CS302: { attended: 14, total: 20, percent: 70 },
-    CS303: { attended: 10, total: 18, percent: 56 },
-    CS304: { attended: 16, total: 20, percent: 80 },
-    MA201: { attended: 12, total: 16, percent: 75 },
-    CS305: { attended: 9,  total: 14, percent: 64 },
-  };
-  return demo[courseId] || { attended: 0, total: 0, percent: 0 };
-}
-
-function getStatus(id) {
-  const p = getAttendance(id).percent;
-  return p >= 75 ? "safe" : p >= 60 ? "warning" : "danger";
-}
-
-function getSafeSkips(id) {
-  const { attended, total } = getAttendance(id);
-  return Math.max(0, Math.floor(attended / 0.75 - total));
-}
+import { getAttendance, getStatus, getSafeSkips, markAttendance, syncState } from "./logic.js";
 
 // ── State ──────────────────────────────────────────────────────
-const today      = new Date();
-const rawDay     = today.getDay();             // 0=Sun,1=Mon…6=Sat
-const todayIdx   = rawDay === 0 ? -1 : rawDay - 1; // Mon=0 … Fri=4, weekend=-1
+const today       = new Date();
+const rawDay      = today.getDay();             // 0=Sun, 1=Mon … 6=Sat
+const todayIdx    = rawDay === 0 ? -1 : rawDay - 1; // Mon=0 … Fri=4, weekend=-1
 let   selectedDay = todayIdx >= 0 && todayIdx <= 4 ? todayIdx : 0;
 
-// Course emoji map (fun!)
+// Course emoji map
 const COURSE_EMOJI = {
   CS301: "🧩", CS302: "🗃️", CS303: "⚙️",
   CS304: "🌐", MA201: "📐", CS305: "🛠️",
@@ -46,7 +25,7 @@ const COURSE_EMOJI = {
 const STATUS_EMOJI = { safe: "✅", warning: "⚠️", danger: "🚨" };
 
 // ── Boot ───────────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // Live clock
   startClock("navbar-clock");
   startNotifications();
@@ -57,31 +36,38 @@ document.addEventListener("DOMContentLoaded", () => {
     weekday: "long", day: "numeric", month: "long", year: "numeric"
   });
 
+  // Initial render (optimistic / cached seed)
+  renderAll();
+  bindPanel();
+  animateIn(".schedule-item");
+
+  // Sync with backend server (survives refreshes & multi-tab)
+  await syncState();
+  renderAll();
+});
+
+function renderAll() {
   renderStats();
   renderWeekNav();
   renderGrid();
   renderDaySchedule(selectedDay);
-  bindPanel();
+}
 
-  // Stagger-in animation for schedule items
-  animateIn(".schedule-item");
-});
-
-// ── Stats ──────────────────────────────────────────────────────
+// ── Stats Bar ──────────────────────────────────────────────────
 function renderStats() {
   const el = document.getElementById("stats-bar");
   if (!el) return;
 
-  const weekTotal  = TIMETABLE.length;
-  const todayCls   = TIMETABLE.filter(s => s.day === todayIdx).length;
-  const safeCount  = COURSES.filter(c => getStatus(c.id) === "safe").length;
-  const dangerCount= COURSES.filter(c => getStatus(c.id) === "danger").length;
+  const weekTotal   = TIMETABLE.length;
+  const todayCls    = TIMETABLE.filter(s => s.day === todayIdx).length;
+  const safeCount   = COURSES.filter(c => getStatus(c.id) === "safe").length;
+  const dangerCount = COURSES.filter(c => getStatus(c.id) === "danger").length;
 
   const stats = [
-    { icon: "📚", value: weekTotal,   label: "Classes/Week",  color: "var(--clr-primary)" },
-    { icon: "☀️", value: todayCls,    label: "Today",         color: "var(--clr-gold)" },
-    { icon: "✅", value: safeCount,   label: "Safe Subjects", color: "var(--clr-safe)" },
-    { icon: "🚨", value: dangerCount, label: "Need Rescue",   color: "var(--clr-danger)" },
+    { icon: "📚", value: weekTotal,   label: "Classes/Week",  color: "var(--clr-primary-dark)" },
+    { icon: "☀️", value: todayCls,    label: "Today",         color: "var(--clr-accent-dark)" },
+    { icon: "✅", value: safeCount,   label: "Safe Subjects", color: "var(--clr-safe-text)" },
+    { icon: "🚨", value: dangerCount, label: "Need Rescue",   color: "var(--clr-danger-text)" },
   ];
 
   el.innerHTML = stats.map(s => `
@@ -101,10 +87,10 @@ function renderWeekNav() {
   const monday = getMondayOf(today);
 
   el.innerHTML = DAYS.map((name, i) => {
-    const d        = new Date(monday);
+    const d       = new Date(monday);
     d.setDate(monday.getDate() + i);
-    const isToday  = i === todayIdx;
-    const isSel    = i === selectedDay;
+    const isToday = i === todayIdx;
+    const isSel   = i === selectedDay;
 
     return `
       <button class="day-chip${isSel ? " active" : ""}${isToday ? " today-chip" : ""}"
@@ -165,7 +151,7 @@ function renderGrid() {
         html += `
           <div class="grid-cell${isToday ? " today-col" : ""}">
             <div class="class-card"
-                 style="background:${course.color}18; border-color:${course.color}35;"
+                 style="background:${course.color}20; border-color:${course.color}60;"
                  onclick="window.openDetail('${sess.courseId}')">
               <div>
                 <div class="cc-code" style="color:${course.color}">${emoji} ${course.code}</div>
@@ -175,7 +161,7 @@ function renderGrid() {
                 <span class="cc-time">${sess.startTime}–${sess.endTime}</span>
                 <div style="display:flex;align-items:center;gap:4px">
                   ${isLab ? '<span class="lab-tag" style="background:'+course.color+'40">LAB</span>' : ""}
-                  <span class="status-dot status-dot--${status}" title="${status} · ${percent}%"></span>
+                  <span class="status-dot status-dot--${status}" title="${status.toUpperCase()} · ${percent}% attendance"></span>
                 </div>
               </div>
             </div>
@@ -209,8 +195,8 @@ function renderDaySchedule(dayIdx) {
     listEl.innerHTML = `
       <div class="empty-day">
         <div class="empty-day__emoji">🎉</div>
-        <div class="empty-day__title">No classes on ${DAYS[dayIdx]}!</div>
-        <div class="empty-day__sub">Enjoy your break — you've earned it ✨</div>
+        <div class="empty-day__title">No classes scheduled on ${DAYS[dayIdx]}!</div>
+        <div class="empty-day__sub">Enjoy your free time or catch up on revision ✨</div>
       </div>`;
     return;
   }
@@ -228,8 +214,8 @@ function buildItem(sess) {
   const se      = STATUS_EMOJI[status];
 
   const skipMsg = skips > 0
-    ? `<span style="color:var(--clr-safe)">✓ ${skips} safe skip${skips>1?"s":""} left</span>`
-    : `<span style="color:var(--clr-danger)">⚠ Cannot skip any class</span>`;
+    ? `<span style="color:var(--clr-safe-text)">✓ ${skips} safe skip${skips>1?"s":""} remaining</span>`
+    : `<span style="color:var(--clr-danger-text)">⚠ Cannot skip any class</span>`;
 
   return `
     <div class="schedule-item"
@@ -256,12 +242,12 @@ function buildItem(sess) {
           <span>🏷 ${course.code}</span>
           <span>👤 ${course.instructor}</span>
           <span>📍 ${sess.room}</span>
-          <span>💎 ${course.credits} cr</span>
+          <span>💎 ${course.credits} Credits</span>
         </div>
 
         <div class="si-attendance">
           <div class="si-att-row">
-            <span>Attendance</span>
+            <span>Attendance Progress</span>
             <span class="si-att-pct">${attended}/${total} classes · <strong style="color:var(--clr-${status})">${percent}%</strong></span>
           </div>
           <div class="progress">
@@ -282,17 +268,24 @@ function bindPanel() {
 
 window.openDetail = function(courseId) {
   const course  = getCourse(courseId);
+  if (!course) return;
+
   const status  = getStatus(courseId);
   const { percent, attended, total } = getAttendance(courseId);
   const skips   = getSafeSkips(courseId);
   const emoji   = COURSE_EMOJI[courseId] || "📖";
 
-  const statusClr = { safe: "var(--clr-safe)", warning: "var(--clr-warning)", danger: "var(--clr-danger)" }[status];
+  const statusClr = {
+    safe: "var(--clr-safe-text)",
+    warning: "var(--clr-warning-text)",
+    danger: "var(--clr-danger-text)"
+  }[status];
+
   const se = STATUS_EMOJI[status];
 
   const skipText = skips > 0
-    ? `<span style="color:var(--clr-safe);font-weight:700">✓ ${skips} class${skips>1?"es":""}</span>`
-    : `<span style="color:var(--clr-danger);font-weight:700">None — attend every class!</span>`;
+    ? `<span style="color:var(--clr-safe-text);font-weight:700">✓ ${skips} class${skips>1?"es":""}</span>`
+    : `<span style="color:var(--clr-danger-text);font-weight:700">None — attend every class!</span>`;
 
   document.getElementById("detail-sheet-content").innerHTML = `
     <div class="sheet-handle"></div>
@@ -312,38 +305,53 @@ window.openDetail = function(courseId) {
         <div class="progress__bar progress__bar--${status}" style="width:${percent}%"></div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:var(--fs-xs);color:var(--clr-text-muted)">
-        <span>${attended} attended of ${total} total</span>
-        <span>Min. 75% required</span>
+        <span>${attended} attended of ${total} held</span>
+        <span>Min. ${course.requiredPercent}% required</span>
       </div>
     </div>
 
-    <!-- Rows -->
+    <!-- Details -->
     <div class="sheet-rows">
       <div class="sheet-row">
         <span class="sheet-row-key">Safe Skips Left</span>
         <span class="sheet-row-val">${skipText}</span>
       </div>
       <div class="sheet-row">
-        <span class="sheet-row-key">Required</span>
+        <span class="sheet-row-key">Required Minimum</span>
         <span class="sheet-row-val">${course.requiredPercent}%</span>
       </div>
       <div class="sheet-row">
-        <span class="sheet-row-key">Classes needed to reach 75%</span>
+        <span class="sheet-row-key">Recovery Plan</span>
         <span class="sheet-row-val" style="color:${statusClr}">
-          ${percent >= 75 ? "Already safe 🎉" : Math.ceil((0.75*total - attended)/0.25) + " more"}
+          ${percent >= 75 ? "Target achieved 🎉" : "Attend next " + Math.ceil((0.75*total - attended)/0.25) + " consecutive classes"}
         </span>
       </div>
     </div>
 
+    <div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-4)">
+      <button class="btn btn--mint btn--sm" style="flex:1" onclick="window.quickMark('${courseId}', true)">
+        ✅ Mark Present
+      </button>
+      <button class="btn btn--danger btn--sm" style="flex:1" onclick="window.quickMark('${courseId}', false)">
+        ❌ Mark Absent
+      </button>
+    </div>
+
     <div class="sheet-actions">
       <a href="tracker.html?course=${courseId}" class="btn btn--primary" style="flex:1">
-        📋 Mark Attendance
+        📋 Open in Tracker
       </a>
       <button class="btn btn--ghost" style="flex:0 0 auto" onclick="window.closeDetail()">Close</button>
     </div>
   `;
 
   document.getElementById("detail-panel").classList.add("open");
+};
+
+window.quickMark = async function(courseId, present) {
+  await markAttendance(courseId, present);
+  renderAll();
+  window.openDetail(courseId); // refresh open sheet
 };
 
 window.closeDetail = function() {
@@ -359,7 +367,7 @@ function animateIn(selector) {
     el.style.transition = "none";
     requestAnimationFrame(() => {
       setTimeout(() => {
-        el.style.transition = `opacity 0.35s ease ${i*60}ms, transform 0.35s ease ${i*60}ms`;
+        el.style.transition = `opacity 0.35s ease ${i*40}ms, transform 0.35s ease ${i*40}ms`;
         el.style.opacity = "1";
         el.style.transform = "translateY(0)";
       }, 10);
