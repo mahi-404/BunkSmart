@@ -56,6 +56,43 @@
     <!-- Summary bar -->
     <div class="summary-bar" id="summary-bar"></div>
 
+    <!-- Story checkpoint -->
+    <section class="story-panel" aria-labelledby="story-title">
+      <div class="story-heading">
+        <div>
+          <div class="header-eyebrow">🎭 Chapter 1 · The 75% Line</div>
+          <h2 id="story-title">One decision before the next class</h2>
+          <p>Alex is tempted to skip. Trace has the numbers. Prof. Maya has the attendance sheet.</p>
+        </div>
+        <label class="story-course-picker">
+          <span>Choose a class</span>
+          <select id="story-course"></select>
+        </label>
+      </div>
+      <div class="story-cast">
+        <article class="story-character story-character--student">
+          <img src="Divya.png" alt="Alex, the student" />
+          <div class="story-character__name">Alex <span>THE STUDENT</span></div>
+          <p id="story-alex">Maybe one more day off won't hurt… right?</p>
+        </article>
+        <article class="story-character story-character--tracker">
+          <img src="mahitha.png" alt="Trace, the attendance tracker" />
+          <div class="story-character__name">Trace <span>THE TRACKER</span></div>
+          <p id="story-trace">Pick a class and I’ll calculate the consequences.</p>
+        </article>
+        <article class="story-character story-character--instructor">
+          <img src="swetha.png" alt="Prof. Maya, the instructor" />
+          <div class="story-character__name">Prof. Maya <span>THE INSTRUCTOR</span></div>
+          <p id="story-maya">I notice every absence. Make your choice count.</p>
+        </article>
+      </div>
+      <div class="story-actions">
+        <button class="btn btn--ghost btn--sm" type="button" onclick="window.storyAsk()">🔮 Ask Trace</button>
+        <button class="btn btn--accent btn--sm" type="button" onclick="window.storyAttend()">✅ Attend class</button>
+        <button class="btn btn--danger btn--sm" type="button" onclick="window.storyPredict()">😈 Consider a skip</button>
+      </div>
+    </section>
+
     <!-- Section heading -->
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-5);flex-wrap:wrap;gap:var(--space-3)">
       <div>
@@ -68,6 +105,34 @@
       </div>
       <button class="btn btn--ghost btn--sm" onclick="window.clearAll()">🗑 Reset All</button>
     </div>
+
+    <details class="course-manager" id="course-manager">
+      <summary>➕ Add a subject or manage your course list</summary>
+      <form class="course-form" id="course-form">
+        <div class="course-form__grid">
+          <label>Course ID
+            <input id="course-id" name="id" required maxlength="12" pattern="[A-Z0-9\-]{2,12}" placeholder="BIO101" autocomplete="off" />
+          </label>
+          <label>Course name
+            <input id="course-name" name="name" required maxlength="80" placeholder="Introduction to Biology" />
+          </label>
+          <label>Instructor
+            <input id="course-instructor" name="instructor" required maxlength="80" placeholder="Prof. Lee" />
+          </label>
+          <label>Credits
+            <input id="course-credits" name="credits" required type="number" min="1" max="30" value="3" />
+          </label>
+          <label>Course colour
+            <input id="course-color" name="color" type="color" value="#a78bfa" />
+          </label>
+        </div>
+        <div class="course-form__actions">
+          <button class="btn btn--primary btn--sm" id="course-form-submit" type="submit">Add course</button>
+          <button class="btn btn--ghost btn--sm" id="course-form-cancel" type="button" hidden>Cancel edit</button>
+          <span id="course-form-message" role="status" aria-live="polite"></span>
+        </div>
+      </form>
+    </details>
 
     <!-- Course cards grid -->
     <div class="course-grid" id="course-grid"></div>

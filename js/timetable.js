@@ -4,9 +4,7 @@
 //  Fully integrated with logic.js and backend server.
 // ============================================================
 
-import { COURSES, TIMETABLE, DAYS, getCourse } from "./data.js";
-import { startClock }                          from "./clock.js";
-import { startNotifications }                  from "./notify.js";
+import { COURSES, TIMETABLE, DAYS, escapeHtml, getCourse } from "./data.js";
 import { getAttendance, getStatus, getSafeSkips, markAttendance, syncState } from "./logic.js";
 
 // ── State ──────────────────────────────────────────────────────
@@ -154,8 +152,8 @@ function renderGrid() {
                  style="background:${course.color}20; border-color:${course.color}60;"
                  onclick="window.openDetail('${sess.courseId}')">
               <div>
-                <div class="cc-code" style="color:${course.color}">${emoji} ${course.code}</div>
-                <div class="cc-name">${course.name}</div>
+                <div class="cc-code" style="color:${course.color}">${emoji} ${escapeHtml(course.code)}</div>
+                <div class="cc-name">${escapeHtml(course.name)}</div>
               </div>
               <div class="cc-foot">
                 <span class="cc-time">${sess.startTime}–${sess.endTime}</span>
@@ -232,15 +230,15 @@ function buildItem(sess) {
       <div class="si-body">
         <div class="si-top">
           <div class="si-name">
-            ${emoji} ${course.name}
+            ${emoji} ${escapeHtml(course.name)}
             ${isLab ? '<span class="badge badge--info" style="font-size:9px">LAB</span>' : ""}
           </div>
           <span class="badge badge--${status}">${se} ${status}</span>
         </div>
 
         <div class="si-meta">
-          <span>🏷 ${course.code}</span>
-          <span>👤 ${course.instructor}</span>
+          <span>🏷 ${escapeHtml(course.code)}</span>
+          <span>👤 ${escapeHtml(course.instructor)}</span>
           <span>📍 ${sess.room}</span>
           <span>💎 ${course.credits} Credits</span>
         </div>
@@ -292,8 +290,8 @@ window.openDetail = function(courseId) {
     <div class="sheet-color-bar" style="background:${course.color}"></div>
 
     <div style="font-size:2.5rem;margin-bottom:var(--space-2)">${emoji}</div>
-    <div class="sheet-title">${course.name}</div>
-    <div class="sheet-code">${course.code} · ${course.credits} Credits · ${course.instructor}</div>
+    <div class="sheet-title">${escapeHtml(course.name)}</div>
+    <div class="sheet-code">${escapeHtml(course.code)} · ${course.credits} Credits · ${escapeHtml(course.instructor)}</div>
 
     <!-- Attendance box -->
     <div class="sheet-att-box">

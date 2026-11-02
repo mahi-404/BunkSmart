@@ -5,6 +5,7 @@
 // ============================================================
 
 import { getRecord, setRecord, postAttendanceMark, syncFromServer, loadRecords } from "./storage.js";
+import { getCourse } from "./data.js";
 
 // ──────────────────────────────────────────────────────────────
 // Public API (agreed function names from the project spec)
@@ -22,24 +23,26 @@ export function getAttendance(courseId) {
 
 /**
  * getStatus(courseId)
- * Returns "safe" (>=75%) | "warning" (60–74%) | "danger" (<60%)
+ * Returns "safe" (>= requiredPercent) | "warning" (60–74%) | "danger" (<60%)
  */
 export function getStatus(courseId) {
   const { percent } = getAttendance(courseId);
-  if (percent >= 75) return "safe";
+  const requiredPercent = getCourse(courseId)?.requiredPercent ?? 75;
+  if (percent >= requiredPercent) return "safe";
   if (percent >= 60) return "warning";
   return "danger";
 }
 
 /**
  * getSafeSkips(courseId)
- * Calculates how many more classes you can skip while staying >= 75%.
- * Formula: attended / (total + x) >= 0.75  →  x <= (attended / 0.75) - total
+ * Calculates how many more classes you can skip while staying >= required rate.
+ * Formula: attended / (total + x) >= requiredRate  →  x <= (attended / requiredRate) - total
  */
 export function getSafeSkips(courseId) {
   const { attended, total } = getAttendance(courseId);
+  const requiredRate = (getCourse(courseId)?.requiredPercent ?? 75) / 100;
   if (total === 0) return 0;
-  return Math.max(0, Math.floor((attended / 0.75) - total));
+  return Math.max(0, Math.floor((attended / requiredRate) - total));
 }
 
 /**
@@ -58,6 +61,9 @@ export function predictSkip(courseId) {
  * Returns a promise that resolves with result status.
  */
 export async function markAttendance(courseId, present) {
+  if (!getCourse(courseId)) throw new Error(`Course ${courseId} was not found.`);
+  if (typeof present !== "boolean") throw new TypeError("Attendance must be marked present or absent.");
+
   // 1. Optimistic synchronous update for instant UI feedback
   const { attended, total } = getRecord(courseId);
   setRecord(courseId, {
@@ -71,13 +77,14 @@ export async function markAttendance(courseId, present) {
 
 /**
  * classesNeeded(courseId)
- * How many consecutive classes you must attend to climb back to 75%.
- * Formula: (attended + x) / (total + x) >= 0.75  →  x >= (0.75*total - attended) / 0.25
+ * How many consecutive classes you must attend to climb back to target.
+ * Formula: (attended + x) / (total + x) >= requiredRate  →  x >= (requiredRate*total - attended) / (1 - requiredRate)
  */
 export function classesNeeded(courseId) {
   const { attended, total } = getAttendance(courseId);
-  if (total === 0 || (attended / total) >= 0.75) return 0;
-  return Math.ceil((0.75 * total - attended) / 0.25);
+  const requiredRate = (getCourse(courseId)?.requiredPercent ?? 75) / 100;
+  if (total > 0 && attended / total >= requiredRate) return 0;
+  return Math.ceil((requiredRate * total - attended) / (1 - requiredRate));
 }
 
 /**
