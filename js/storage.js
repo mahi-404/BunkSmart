@@ -4,7 +4,7 @@
 //  Handles local storage caching, course management & API sync.
 // ============================================================
 
-const KEY = "attendai_records"; // { [courseId]: { attended, total } }
+const KEY = "bunksmart_records"; // { [courseId]: { attended, total } }
 const COURSES_KEY = "bunksmart_courses";
 const LOG_KEY = "bunksmart_attendance_log";
 
@@ -18,7 +18,7 @@ export const SEED_RECORDS = {
 };
 
 export function loadRecords() {
-  const stored = localStorage.getItem(KEY);
+  const stored = localStorage.getItem(KEY) || localStorage.getItem("attendai_records");
   if (!stored) {
     saveRecords(SEED_RECORDS);
     return { ...SEED_RECORDS };
