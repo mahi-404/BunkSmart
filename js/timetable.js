@@ -2,11 +2,11 @@
 //  timetable.js  ✨ Aesthetic Edition
 //  Person 3 · Depends on data.js + clock.js
 // ============================================================
+   import { COURSES, TIMETABLE, DAYS, escapeHtml, getCourse } from "./data.js";
+   import { getAttendance, getStatus, getSafeSkips, classesNeeded } from "./logic.js";
+   import { startClock }                          from "./clock.js";
+   import { startNotifications }                  from "./notify.js";
 
-import { COURSES, TIMETABLE, DAYS, escapeHtml, getCourse } from "./data.js";
-import { getAttendance, getStatus, getSafeSkips } from "./logic.js";
-import { startClock }                          from "./clock.js";
-import { startNotifications }                  from "./notify.js";
 
 // ── State ──────────────────────────────────────────────────────
 const today      = new Date();
@@ -158,11 +158,25 @@ function renderGrid() {
               </div>
             </div>
           </div>`;
-      } else {
-        html += `
-          <div class="grid-cell${isToday ? " today-col" : ""}">
-            <div class="free-cell"><span>✦</span></div>
-          </div>`;
+            } else {
+        const running = TIMETABLE.find(s =>
+          s.day === dayIdx && mins(s.startTime) < mins(slot) && mins(s.endTime) > mins(slot));
+
+        if (running) {
+          const c = getCourse(running.courseId);
+          html += `
+            <div class="grid-cell${isToday ? " today-col" : ""}">
+              <div class="class-card" style="background:${c.color}10;border:1.5px dashed ${c.color}66"
+                   onclick="window.openDetail('${running.courseId}')">
+                <div class="cc-code" style="color:${c.color}">↑ ${escapeHtml(c.code)} continues</div>
+              </div>
+            </div>`;
+        } else {
+          html += `
+            <div class="grid-cell${isToday ? " today-col" : ""}">
+              <div class="free-cell"><span>✦</span></div>
+            </div>`;
+        }
       }
     });
   });
@@ -308,7 +322,7 @@ window.openDetail = function(courseId) {
       <div class="sheet-row">
         <span class="sheet-row-key">Classes needed to reach 75%</span>
         <span class="sheet-row-val" style="color:${statusClr}">
-          ${percent >= 75 ? "Already safe 🎉" : Math.ceil((0.75*total - attended)/0.25) + " more"}
+          ${classesNeeded(courseId) === 0 ? "Already safe 🎉" : classesNeeded(courseId) + " more"}
         </span>
       </div>
     </div>
