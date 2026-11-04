@@ -1,14 +1,14 @@
 // ============================================================
-//  logic.js  –  Attendance brain  🧠
+//  logic.js – Attendance Calculation Engine (The Brain 🧠)
 //  Person 2 owns this file.
-//  All other pages import from here on integration day.
+//  Used by Person 1 (dialogue), Person 2 (tracker), Person 3 (timetable/dashboard).
 // ============================================================
 
-import { getRecord, setRecord } from "./storage.js";
+import { getRecord, setRecord, postAttendanceMark, syncFromServer, loadRecords } from "./storage.js";
 import { getCourse } from "./data.js";
 
 // ──────────────────────────────────────────────────────────────
-// Public API  (agreed function names from the project spec)
+// Public API (agreed function names from the project spec)
 // ──────────────────────────────────────────────────────────────
 
 /**
@@ -23,7 +23,7 @@ export function getAttendance(courseId) {
 
 /**
  * getStatus(courseId)
- * Returns "safe" | "warning" | "danger"
+ * Returns "safe" (>= requiredPercent) | "warning" (60–74%) | "danger" (<60%)
  */
 export function getStatus(courseId) {
   const { percent } = getAttendance(courseId);
@@ -35,12 +35,14 @@ export function getStatus(courseId) {
 
 /**
  * getSafeSkips(courseId)
- * How many more classes can you skip and still stay ≥ 75%?
+ * Calculates how many more classes you can skip while staying >= required rate.
+ * Formula: attended / (total + x) >= requiredRate  →  x <= (attended / requiredRate) - total
  */
 export function getSafeSkips(courseId) {
   const { attended, total } = getAttendance(courseId);
   const requiredRate = (getCourse(courseId)?.requiredPercent ?? 75) / 100;
-  return Math.max(0, Math.floor(attended / requiredRate - total));
+  if (total === 0) return 0;
+  return Math.max(0, Math.floor((attended / requiredRate) - total));
 }
 
 /**
@@ -55,25 +57,40 @@ export function predictSkip(courseId) {
 
 /**
  * markAttendance(courseId, present)
- * present = true → attended; false → absent
+ * Synchronously updates local state and fires asynchronous server sync.
+ * Returns a promise that resolves with result status.
  */
-export function markAttendance(courseId, present) {
+export async function markAttendance(courseId, present) {
   if (!getCourse(courseId)) throw new Error(`Course ${courseId} was not found.`);
   if (typeof present !== "boolean") throw new TypeError("Attendance must be marked present or absent.");
+
+  // 1. Optimistic synchronous update for instant UI feedback
   const { attended, total } = getRecord(courseId);
   setRecord(courseId, {
     attended: present ? attended + 1 : attended,
     total: total + 1,
   });
+
+  // 2. Synchronize with backend server validation
+  return await postAttendanceMark(courseId, present);
 }
 
 /**
  * classesNeeded(courseId)
- * How many consecutive classes to attend to reach 75%?
+ * How many consecutive classes you must attend to climb back to target.
+ * Formula: (attended + x) / (total + x) >= requiredRate  →  x >= (requiredRate*total - attended) / (1 - requiredRate)
  */
 export function classesNeeded(courseId) {
   const { attended, total } = getAttendance(courseId);
   const requiredRate = (getCourse(courseId)?.requiredPercent ?? 75) / 100;
   if (total > 0 && attended / total >= requiredRate) return 0;
   return Math.ceil((requiredRate * total - attended) / (1 - requiredRate));
+}
+
+/**
+ * syncState()
+ * Fetches latest attendance records from the server to guarantee fresh state.
+ */
+export async function syncState() {
+  return await syncFromServer();
 }

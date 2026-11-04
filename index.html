@@ -12,6 +12,7 @@
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
   <link rel="stylesheet" href="css/index.css" />
+  <link rel="stylesheet" href="css/characters.css" />
 </head>
 <body>
 
@@ -113,6 +114,60 @@
       </div>
 
     </div>
+
+    <!-- ── LIVE INTERACTIVE CHARACTER STAGE ── -->
+    <div style="margin-top:var(--space-12)">
+      <div class="character-stage">
+        <div class="stage-header">
+          <div class="header-eyebrow" style="justify-content:center">🎭 Interactive Decision Stage</div>
+          <h3 class="stage-title">Ask the Squad: "Can I Skip Today?"</h3>
+          <p class="stage-subtitle">Select a course to test the dialogue engine against your real attendance database.</p>
+        </div>
+
+        <!-- Course Picker -->
+        <div class="stage-course-picker" id="stage-course-picker"></div>
+
+        <!-- Arena with 3 actors -->
+        <div class="characters-arena">
+          <div class="character-slot character-slot--student" id="actor-student">
+            <div class="actor-bubble">🧑‍💻</div>
+            <div class="actor-meta">
+              <div class="actor-name">Alex</div>
+              <div class="actor-role">Student</div>
+            </div>
+          </div>
+
+          <div class="character-slot character-slot--tracker" id="actor-tracker">
+            <div class="actor-bubble">🤖</div>
+            <div class="actor-meta">
+              <div class="actor-name">Trace</div>
+              <div class="actor-role">AI Tracker</div>
+            </div>
+          </div>
+
+          <div class="character-slot character-slot--instructor" id="actor-instructor">
+            <div class="actor-bubble">👩‍🏫</div>
+            <div class="actor-meta">
+              <div class="actor-name">Prof. Maya</div>
+              <div class="actor-role">Faculty</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dialogue Box -->
+        <div class="dialogue-box">
+          <div class="dialogue-speaker" id="dialogue-speaker">Initializing Scene...</div>
+          <div class="dialogue-text">
+            <span id="dialogue-text">Loading squad dialogue...</span>
+            <span class="dialogue-cursor"></span>
+          </div>
+        </div>
+
+        <!-- Choice Actions -->
+        <div class="dialogue-actions" id="dialogue-actions"></div>
+      </div>
+    </div>
+
   </div>
 </section>
 
@@ -146,13 +201,13 @@
       </div>
       <div class="feat-card">
         <div class="feat-icon">💾</div>
-        <div class="feat-title">Offline First</div>
-        <div class="feat-desc">Everything saves to localStorage. No login, no server, no nonsense. Works anywhere.</div>
+        <div class="feat-title">Survives Refresh</div>
+        <div class="feat-desc">Synchronized with Node backend server and persisted to disk. F5 refresh safe and verified.</div>
       </div>
       <div class="feat-card">
         <div class="feat-icon">🎭</div>
-        <div class="feat-title">Character Conversations</div>
-        <div class="feat-desc">Animated characters react to your attendance. Trace goes angry when you're in danger. Prof. Maya… well.</div>
+        <div class="feat-title">Character Dialogue</div>
+        <div class="feat-desc">Interactive 3-character stage with typewriter speech bubbles, angry shake reactions, and direct decision consequences.</div>
       </div>
     </div>
   </div>
@@ -189,6 +244,7 @@
 <script type="module">
   import { startClock } from "./js/clock.js";
   import { COURSES }    from "./js/data.js";
+  import { initDialogueStage } from "./js/dialogue.js";
 
   startClock("navbar-clock");
 
@@ -205,6 +261,9 @@
         <span>${p.text}</span>
       </div>`).join("");
   }
+
+  // Initialize Person 1's Character Dialogue Stage
+  initDialogueStage();
 </script>
 
 </body>

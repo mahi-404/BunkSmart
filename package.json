@@ -1,0 +1,23 @@
+{
+  "name": "bunksmart",
+  "version": "1.0.0",
+  "description": "Smart pastel attendance tracker and timetable companion for college students.",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/server.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mahi-404/BunkSmart.git"
+  },
+  "keywords": [
+    "attendance",
+    "timetable",
+    "fullstack",
+    "student"
+  ],
+  "author": "Mahitha & Team",
+  "license": "MIT"
+}

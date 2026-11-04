@@ -1,5 +1,5 @@
 // ============================================================
-//  tracker.js  –  ✨ Aesthetic Edition
+//  tracker.js – Attendance Tracker Page
 //  Person 2 owns this file.
 //  Depends on: logic.js, storage.js, data.js, clock.js
 // ============================================================
@@ -7,32 +7,33 @@
 import {
   COURSES, addCourse, deleteCourse, escapeHtml, getCourse, updateCourse,
 } from "./data.js";
-import { getAttendance, getStatus,
-         getSafeSkips, predictSkip,
-         markAttendance, classesNeeded }   from "./logic.js";
+import {
+  getAttendance, getStatus, getSafeSkips, predictSkip,
+  markAttendance, classesNeeded, syncState
+} from "./logic.js";
 import {
   clearAll as clearStorage, loadAttendanceLog, saveAttendanceLog,
 } from "./storage.js";
-import { startClock }                      from "./clock.js";
+import { startClock } from "./clock.js";
 
 // ── Emoji map ──────────────────────────────────────────────────
 const EMOJI = {
-  CS301:"🧩", CS302:"🗃️", CS303:"⚙️",
-  CS304:"🌐", MA201:"📐", CS305:"🛠️",
+  CS301: "🧩", CS302: "🗃️", CS303: "⚙️",
+  CS304: "🌐", MA201: "📐", CS305: "🛠️",
 };
 
 const STATUS_MSG = {
   safe:    ["You're safe! 🎉", "All good — keep it up!", "Attendance on point ✅"],
   warning: ["Getting close ⚠️", "Don't skip anymore!", "Tread carefully 🚶"],
-  danger:  ["SOS mode 🚨", "Attend EVERY class!", "Call your parents jk... but attend class"],
+  danger:  ["SOS mode 🚨", "Attend EVERY class!", "Detention risk is active!"],
 };
 
-// Log store (session-only)
+// Log store
 const logEntries = [];
 let editingCourseId = null;
 
 // ── Boot ───────────────────────────────────────────────────────
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   startClock("navbar-clock");
   try {
     logEntries.push(...loadAttendanceLog());
@@ -44,15 +45,22 @@ document.addEventListener("DOMContentLoaded", () => {
   renderCards();
   renderStory();
   bindCourseForm();
+
+  // Fresh sync from server (survives refreshes & multi-tab edits)
+  await syncState();
+  renderSummary();
+  renderCards();
+  renderStory();
+
   // Pre-select course from URL ?course=CS301
-  const params  = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(window.location.search);
   const preload = params.get("course");
   if (preload) {
     const el = document.getElementById(`card-${preload}`);
     if (el) {
       el.scrollIntoView({ behavior: "smooth", block: "center" });
-      el.style.boxShadow = `0 0 0 2px var(--clr-primary), var(--shadow-lg)`;
-      setTimeout(() => el.style.boxShadow = "", 2000);
+      el.style.boxShadow = `0 0 0 3px var(--clr-lavender-dark), var(--shadow-lg)`;
+      setTimeout(() => (el.style.boxShadow = ""), 2500);
     }
   }
 });
@@ -68,11 +76,11 @@ function renderSummary() {
   const total   = COURSES.reduce((s, c) => s + getAttendance(c.id).total, 0);
 
   el.innerHTML = [
-    { icon:"📚", val: COURSES.length, lbl:"Subjects",     color:"var(--clr-primary)" },
-    { icon:"✅", val: safe,           lbl:"Safe",         color:"var(--clr-safe)" },
-    { icon:"⚠️", val: warning,        lbl:"Warning",      color:"var(--clr-warning)" },
-    { icon:"🚨", val: danger,         lbl:"Danger",       color:"var(--clr-danger)" },
-    { icon:"🗓", val: total,          lbl:"Total Marked", color:"var(--clr-primary)" },
+    { icon: "📚", val: COURSES.length, lbl: "Subjects",     color: "var(--clr-primary-dark)" },
+    { icon: "✅", val: safe,           lbl: "Safe",         color: "var(--clr-safe-text)" },
+    { icon: "⚠️", val: warning,        lbl: "Warning",      color: "var(--clr-warning-text)" },
+    { icon: "🚨", val: danger,         lbl: "Danger",       color: "var(--clr-danger-text)" },
+    { icon: "🗓", val: total,          lbl: "Total Marked", color: "var(--clr-primary-dark)" },
   ].map(s => `
     <div class="stat-card" style="--stat-color:${s.color}">
       <div class="stat-card__icon">${s.icon}</div>
@@ -100,20 +108,20 @@ function buildCard(course) {
   // SVG ring
   const r  = 28;
   const circ = 2 * Math.PI * r;
-  const offset = circ - (percent / 100) * circ;
+  const offset = total === 0 ? circ : circ - (percent / 100) * circ;
   const statusClr = {
     safe: "var(--clr-safe)", warning: "var(--clr-warning)", danger: "var(--clr-danger)"
   }[status];
 
   const skipInfo = skips > 0
-    ? `<span style="color:var(--clr-safe)">✓ ${skips} skip${skips>1?"s":""} left</span>`
-    : `<span style="color:var(--clr-danger)">⚠ No skips allowed</span>`;
+    ? `<span style="color:var(--clr-safe-text);font-weight:700">✓ ${skips} skip${skips > 1 ? "s" : ""} left</span>`
+    : `<span style="color:var(--clr-danger-text);font-weight:700">⚠ No skips allowed</span>`;
 
   const needInfo = needed > 0
-    ? `Need <strong style="color:${statusClr}">${needed}</strong> more to reach 75%`
+    ? `Need <strong style="color:var(--clr-${status}-text)">${needed}</strong> to reach 75%`
     : total === 0
       ? `<span style="color:var(--clr-text-muted)">Start attending to build your record</span>`
-      : `<span style="color:var(--clr-safe)">Already at 75%+ 🎉</span>`;
+      : `<span style="color:var(--clr-safe-text);font-weight:700">Already at 75%+ 🎉</span>`;
 
   const msgs = STATUS_MSG[status];
   const funMsg = msgs[Math.floor(Math.random() * msgs.length)];
@@ -127,7 +135,7 @@ function buildCard(course) {
           <div class="cc-title">${escapeHtml(course.name)}</div>
           <div class="cc-meta">
             <span>🏷 ${escapeHtml(course.code)}</span>
-            <span>💎 ${course.credits} cr</span>
+            <span>💎 ${course.credits} Credits</span>
           </div>
           <div style="font-size:var(--fs-xs);color:var(--clr-text-muted);margin-top:var(--space-1)">
             👤 ${escapeHtml(course.instructor)}
@@ -143,11 +151,10 @@ function buildCard(course) {
               stroke="${statusClr}"
               stroke-dasharray="${circ}"
               stroke-dashoffset="${offset}"
-              style="filter:drop-shadow(0 0 4px ${statusClr})"
             />
           </svg>
           <div class="ring-text">
-            <span class="ring-pct" style="color:${statusClr}">${percent}%</span>
+            <span class="ring-pct" style="color:var(--clr-${status}-text)">${percent}%</span>
             <span class="ring-label">attend</span>
           </div>
         </div>
@@ -172,11 +179,11 @@ function buildCard(course) {
       <!-- Skip info -->
       <div class="cc-predict">
         <span>${skipInfo}</span>
-        <span style="margin-left:auto;font-size:var(--fs-xs);color:var(--clr-text-dim)">${needInfo}</span>
+        <span style="margin-left:auto;font-size:var(--fs-xs);color:var(--clr-text-muted)">${needInfo}</span>
       </div>
 
-      <!-- Fun status message -->
-      <div style="padding:0 var(--space-5) var(--space-3);font-size:var(--fs-xs);color:var(--clr-text-dim);font-style:italic">
+      <!-- Status advisory -->
+      <div style="padding:0 var(--space-5) var(--space-3);font-size:var(--fs-xs);color:var(--clr-text-muted);font-style:italic">
         ${funMsg}
       </div>
 
@@ -222,53 +229,45 @@ function renderStory(outcome = "") {
   } else {
     select.value = selectedId;
   }
-  select.disabled = COURSES.length === 0;
 
   const course = getCourse(select.value);
-  const alex = document.getElementById("story-alex");
-  const trace = document.getElementById("story-trace");
-  const maya = document.getElementById("story-maya");
-  if (!course) {
-    alex.textContent = "The semester's story starts when you add a subject.";
-    trace.textContent = "Add a course and I'll keep the numbers straight.";
-    maya.textContent = "No course, no attendance sheet. Let's get started.";
-    return;
-  }
+  if (!course) return;
 
-  const { attended, total, percent } = getAttendance(course.id);
+  const { percent } = getAttendance(course.id);
   const status = getStatus(course.id);
   const skips = getSafeSkips(course.id);
   const afterSkip = predictSkip(course.id);
-  const needed = classesNeeded(course.id);
+  const alex = document.getElementById("story-alex");
+  const trace = document.getElementById("story-trace");
+  const maya = document.getElementById("story-maya");
+  if (!alex || !trace || !maya) return;
 
-  if (outcome === "present") {
-    alex.textContent = `I showed up for ${course.code}. Maybe this comeback arc is real!`;
-    trace.textContent = `Present logged. ${percent}% now (${attended}/${total}); ${skips} safe skip${skips === 1 ? "" : "s"} remain.`;
+  if (outcome === "ask") {
+    alex.textContent = `Should I skip ${course.name}? I could really use a break…`;
+    trace.textContent = skips > 0
+      ? `You have ${skips} safe skip${skips === 1 ? "" : "s"} left. Your attendance will become ${afterSkip}%.`
+      : `No skips left. Skipping drops you to ${afterSkip}%, which is risky.`;
     maya.textContent = status === "safe"
-      ? "Good. Consistency is how you stay above the line."
-      : `A good step, but you're at ${percent}%. Attend ${needed} more to reach 75%.`;
-  } else if (outcome === "absent") {
-    alex.textContent = "I took the day off. Please tell me the numbers aren't too bad.";
-    trace.textContent = `Absence logged. ${percent}% now (${attended}/${total}); skipping again would leave ${afterSkip}%.`;
-    maya.textContent = status === "danger"
-      ? `That's ${percent}%. The next class is not optional if you want to recover.`
-      : status === "warning"
-        ? `You're at ${percent}%. No more casual skips, Alex.`
-        : `You're still at ${percent}%, but don't make a habit of it.`;
+      ? "You are safe, but staying consistent protects you against surprise quizzes."
+      : "You are already walking a thin line. I expect to see you in the lecture hall.";
   } else if (outcome === "predict") {
-    alex.textContent = `I'm eyeing a skip for ${course.code}. Trace, run the numbers first?`;
-    trace.textContent = `A skip takes you from ${percent}% to ${afterSkip}%. ${skips} safe skip${skips === 1 ? "" : "s"} currently available.`;
+    alex.textContent = `If I miss ${course.code}, what happens to my record?`;
+    trace.textContent = `Attendance moves from ${percent}% down to ${afterSkip}%. Status will be ${afterSkip >= 75 ? "SAFE" : afterSkip >= 60 ? "WARNING" : "DANGER"}.`;
     maya.textContent = afterSkip >= 75
-      ? "The maths says you can. Whether you should is another question."
-      : `That would put you below the 75% requirement. Choose wisely.`;
-  } else if (outcome === "ask") {
-    alex.textContent = `Trace, should I risk missing ${course.code}?`;
-    trace.textContent = `${attended} of ${total} classes attended (${percent}%). ${skips} safe skip${skips === 1 ? "" : "s"} left; a skip would make it ${afterSkip}%.`;
+      ? "Mathematically acceptable, but don't make skipping a habit."
+      : "That choice pushes you directly toward attendance detention.";
+  } else if (outcome === "present") {
+    alex.textContent = `Marked present for ${course.code}! That feels good.`;
+    trace.textContent = `Record logged! Attendance updated to ${percent}%.`;
     maya.textContent = status === "safe"
-      ? `You're currently safe, but my requirement is ${course.requiredPercent}%.`
-      : status === "warning"
-        ? `You're in the warning zone. I expect you in class.`
-        : `You're in danger at ${percent}%. Attend every class until you recover.`;
+      ? "Good discipline. Keep this standard until end of semester."
+      : `Good recovery step. You still need more regular attendance to become fully safe.`;
+  } else if (outcome === "absent") {
+    alex.textContent = `Marked absent for ${course.code}. Now I need to know the damage.`;
+    trace.textContent = `Down to ${percent}%. Safe skips remaining: ${skips}.`;
+    maya.textContent = status === "safe"
+      ? "An absence recorded. Keep track of your buffer before it disappears."
+      : `You're in danger at ${percent}%. Attend every class until you recover.`;
   } else {
     alex.textContent = status === "safe"
       ? `I've got ${course.code} next. Surely one skip is harmless?`
@@ -297,41 +296,41 @@ window.storyPredict = () => {
 };
 
 // ── Mark attendance ────────────────────────────────────────────
-window.mark = function(courseId, present) {
-  try {
-    markAttendance(courseId, present);
-  } catch (error) {
-    showToast("Couldn't save attendance", error.message, "danger");
-    return;
-  }
-
+window.mark = async function(courseId, present) {
   // Animate button
   const btn = document.querySelector(`#card-${courseId} .mark-btn--${present ? "present" : "absent"}`);
   btn?.classList.add("popped");
   setTimeout(() => btn?.classList.remove("popped"), 350);
 
-  // Refresh card
-  const card = document.getElementById(`card-${courseId}`);
-  if (card) {
-    const course = getCourse(courseId);
-    card.outerHTML = buildCard(course);
+  try {
+    // Send to logic & server
+    await markAttendance(courseId, present);
+  } catch (error) {
+    showToast("Couldn't save attendance", error.message, "danger");
+    return;
   }
 
-  // Update summary
+  // Refresh card & summary
+  const course = getCourse(courseId);
+  const card = document.getElementById(`card-${courseId}`);
+  if (card && course) {
+    card.outerHTML = buildCard(course);
+  }
   renderSummary();
 
   // Log entry
   addLog(courseId, present);
 
-  // Toast
-  const course = getCourse(courseId);
+  // Toast & Storyline
   const { percent } = getAttendance(courseId);
+  const status = getStatus(courseId);
   const storySelect = document.getElementById("story-course");
   if (storySelect) storySelect.value = courseId;
+
   showToast(
     present ? `✅ Marked present for ${course.code}` : `❌ Marked absent for ${course.code}`,
-    `Attendance now: ${percent}%`,
-    getStatus(courseId)
+    `New Attendance: ${percent}% (${status.toUpperCase()}) · Saved to server`,
+    status
   );
   renderStory(present ? "present" : "absent");
 };
@@ -343,14 +342,14 @@ window.openPredict = function(courseId) {
   const after    = predictSkip(courseId);
   const current  = getAttendance(courseId).percent;
   const newStatus = after >= 75 ? "safe" : after >= 60 ? "warning" : "danger";
-  const emoji = EMOJI[courseId] || "📖";
-  const verdict = after >= 75
-    ? `<span style="color:var(--clr-safe)">✅ Still safe! Go ahead.</span>`
-    : after >= 60
-    ? `<span style="color:var(--clr-warning)">⚠️ Risky, but survivable.</span>`
-    : `<span style="color:var(--clr-danger)">🚨 DON'T skip this one!</span>`;
+  const emoji     = EMOJI[courseId] || "📖";
+  const drop      = current - after;
 
-  const statusClr = { safe:"var(--clr-safe)", warning:"var(--clr-warning)", danger:"var(--clr-danger)" }[newStatus];
+  const verdict = after >= 75
+    ? `<span style="color:var(--clr-safe-text)">✅ Safe to skip! You will stay above 75%.</span>`
+    : after >= 60
+    ? `<span style="color:var(--clr-warning-text)">⚠️ Warning: Drops to ${after}%. Tread carefully!</span>`
+    : `<span style="color:var(--clr-danger-text)">🚨 Danger: Skipping puts you at ${after}%. DO NOT SKIP!</span>`;
 
   document.getElementById("predict-box-content").innerHTML = `
     <div style="text-align:center;margin-bottom:var(--space-5)">
@@ -368,14 +367,14 @@ window.openPredict = function(courseId) {
         <div style="font-size:var(--fs-3xl);font-weight:800;color:var(--clr-text)">${current}%</div>
         <div style="font-size:var(--fs-xs);color:var(--clr-text-muted);margin-top:4px">Current</div>
       </div>
-      <div style="font-size:2rem">→</div>
+      <div style="font-size:1.5rem;color:var(--clr-text-muted)">→</div>
       <div style="text-align:center">
-        <div style="font-size:var(--fs-3xl);font-weight:800;color:${statusClr}">${after}%</div>
-        <div style="font-size:var(--fs-xs);color:var(--clr-text-muted);margin-top:4px">After skip</div>
+        <div style="font-size:var(--fs-3xl);font-weight:800;color:var(--clr-${newStatus}-text)">${after}%</div>
+        <div style="font-size:var(--fs-xs);color:var(--clr-text-muted);margin-top:4px">After Skip (-${drop}%)</div>
       </div>
     </div>
 
-    <div style="background:rgba(255,255,255,0.03);border:1px solid var(--clr-border);border-radius:var(--radius-lg);padding:var(--space-4);text-align:center;margin-bottom:var(--space-5);font-size:var(--fs-base);font-weight:600">
+    <div style="background:var(--clr-surface-2);border:1.5px solid var(--clr-border-soft);border-radius:var(--radius-lg);padding:var(--space-4);text-align:center;margin-bottom:var(--space-5);font-size:var(--fs-sm);font-weight:600">
       ${verdict}
     </div>
 
@@ -429,7 +428,7 @@ function renderLog() {
   if (!logEl) return;
 
   if (!logEntries.length) {
-    logEl.innerHTML = `<div style="text-align:center;padding:var(--space-8);color:var(--clr-text-dim);font-size:var(--fs-sm)">Mark attendance above to see your log here ✨</div>`;
+    logEl.innerHTML = `<div style="text-align:center;padding:var(--space-8);color:var(--clr-text-muted);font-size:var(--fs-sm)">Mark attendance above to see your log here ✨</div>`;
     return;
   }
   logEl.innerHTML = logEntries.map(e => `
@@ -530,21 +529,23 @@ window.removeCourse = function(courseId) {
 };
 
 // ── Reset all ──────────────────────────────────────────────────
-window.clearAll = function() {
-  if (!confirm("Reset ALL attendance records? This cannot be undone.")) return;
+window.clearAll = async function() {
+  if (!confirm("Reset attendance records back to semester seed data?")) return;
   try {
-    clearStorage();
-  } catch (error) {
-    showToast("Couldn't reset records", error.message, "danger");
-    return;
+    await fetch("/api/attendance/reset", { method: "POST" });
+  } catch {
+    // offline fallback
   }
+  clearStorage();
+  await syncState();
   renderSummary();
   renderCards();
   renderStory();
   logEntries.length = 0;
   renderLog();
   document.getElementById("history-log").innerHTML =
-    `<div style="text-align:center;padding:var(--space-8);color:var(--clr-text-dim);font-size:var(--fs-sm)">All records cleared ✨</div>`;
+    `<div style="text-align:center;padding:var(--space-8);color:var(--clr-text-muted);font-size:var(--fs-sm)">Reset to semester seed data ✨</div>`;
+  showToast("Database Reset", "Restored to semester baseline records", "info");
 };
 
 // ── Toast ──────────────────────────────────────────────────────
@@ -553,13 +554,13 @@ function showToast(title, sub, status = "info") {
   if (!container) return;
 
   const colors = {
-    safe:"var(--clr-safe)", warning:"var(--clr-warning)",
-    danger:"var(--clr-danger)", info:"var(--clr-primary)",
+    safe: "var(--clr-safe)", warning: "var(--clr-warning)",
+    danger: "var(--clr-danger)", info: "var(--clr-primary-dark)",
   };
 
   const t = document.createElement("div");
   t.className = "toast";
-  t.style.borderLeft = `3px solid ${colors[status]}`;
+  t.style.borderLeft = `4px solid ${colors[status] || colors.info}`;
   const copy = document.createElement("div");
   copy.style.cssText = "display:flex;flex-direction:column;gap:2px;flex:1";
   const titleEl = document.createElement("div");
@@ -575,5 +576,5 @@ function showToast(title, sub, status = "info") {
     t.style.transition = "opacity 0.3s";
     t.style.opacity = "0";
     setTimeout(() => t.remove(), 350);
-  }, 3000);
+  }, 3500);
 }

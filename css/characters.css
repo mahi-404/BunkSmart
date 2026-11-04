@@ -1,0 +1,303 @@
+/* ============================================================
+   characters.css – Character Stage & Animated Dialogue Engine
+   Person 1 owns this file.
+   Features: Idle, enter, exit, angry-shake, speech bubbles
+   ============================================================ */
+
+/* ── Character Stage Container ────────────────────────────── */
+.character-stage {
+  background: white;
+  border: 1.5px solid var(--clr-border-soft);
+  border-radius: var(--radius-3xl);
+  padding: var(--space-8);
+  box-shadow: var(--shadow-md);
+  margin-bottom: var(--space-12);
+  position: relative;
+  overflow: hidden;
+}
+
+.stage-header {
+  text-align: center;
+  margin-bottom: var(--space-6);
+}
+
+.stage-title {
+  font-size: var(--fs-xl);
+  font-weight: var(--fw-extrabold);
+  color: var(--clr-text);
+  margin-bottom: var(--space-1);
+}
+
+.stage-subtitle {
+  font-size: var(--fs-sm);
+  color: var(--clr-text-muted);
+}
+
+/* ── Course Selector Bar on Stage ─────────────────────────── */
+.stage-course-picker {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-8);
+}
+
+.stage-course-btn {
+  background: var(--clr-surface-2);
+  border: 1.5px solid var(--clr-border-soft);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-bold);
+  color: var(--clr-text-soft);
+  cursor: pointer;
+  transition: all var(--transition-bounce);
+  font-family: var(--font-sans);
+}
+
+.stage-course-btn:hover {
+  background: var(--clr-lavender-xlt);
+  border-color: var(--clr-border);
+  transform: translateY(-2px);
+}
+
+.stage-course-btn.active {
+  background: var(--clr-lavender-dark);
+  border-color: var(--clr-lavender-dark);
+  color: white;
+  box-shadow: 0 4px 12px var(--clr-lavender-glow);
+}
+
+/* ── The 3 Characters Arena ───────────────────────────────── */
+.characters-arena {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  align-items: end;
+  margin-bottom: var(--space-6);
+  min-height: 220px;
+}
+
+.character-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  transition: all var(--transition-bounce);
+}
+
+.character-slot.speaking {
+  transform: scale(1.06);
+}
+
+.character-slot.inactive {
+  opacity: 0.65;
+  filter: grayscale(20%);
+}
+
+/* Avatar bubble */
+.actor-bubble {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.8rem;
+  border: 3px solid var(--clr-border);
+  background: var(--clr-surface-2);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  transition: all var(--transition-bounce);
+}
+
+.character-slot.speaking .actor-bubble {
+  border-color: var(--clr-lavender-dark);
+  box-shadow: 0 0 0 4px var(--clr-lavender-xlt), var(--shadow-md);
+}
+
+.character-slot--student .actor-bubble {
+  background: var(--clr-lavender-xlt);
+}
+
+.character-slot--tracker .actor-bubble {
+  background: var(--clr-mint-xlt);
+}
+
+.character-slot--instructor .actor-bubble {
+  background: var(--clr-peach-xlt);
+}
+
+.actor-meta {
+  text-align: center;
+  margin-top: var(--space-2);
+}
+
+.actor-name {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  color: var(--clr-text);
+}
+
+.actor-role {
+  font-size: 10px;
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  color: var(--clr-text-muted);
+  letter-spacing: 0.05em;
+}
+
+/* ── Animations (idle, enter, exit, angry-shake) ───────────── */
+@keyframes actorIdle {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes actorEnter {
+  0% { opacity: 0; transform: translateY(25px) scale(0.85); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes actorExit {
+  0% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: translateY(-20px) scale(0.8); }
+}
+
+@keyframes angryShake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  20% { transform: translateX(-8px) rotate(-4deg); }
+  40% { transform: translateX(8px) rotate(4deg); }
+  60% { transform: translateX(-6px) rotate(-2deg); }
+  80% { transform: translateX(6px) rotate(2deg); }
+}
+
+.anim-idle {
+  animation: actorIdle 3.5s ease-in-out infinite;
+}
+
+.anim-enter {
+  animation: actorEnter 0.45s var(--transition-bounce) both;
+}
+
+.anim-exit {
+  animation: actorExit 0.35s ease both;
+}
+
+.anim-angry {
+  animation: angryShake 0.5s ease-in-out infinite !important;
+  border-color: var(--clr-danger) !important;
+}
+
+/* ── Conversation Speech Bubble Display ───────────────────── */
+.dialogue-box {
+  background: var(--clr-surface-2);
+  border: 1.5px solid var(--clr-border-soft);
+  border-radius: var(--radius-2xl);
+  padding: var(--space-5) var(--space-6);
+  min-height: 110px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.dialogue-speaker {
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-extrabold);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--clr-lavender-dark);
+  margin-bottom: var(--space-1);
+}
+
+.dialogue-text {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--clr-text);
+  line-height: var(--lh-normal);
+  min-height: 48px;
+}
+
+.dialogue-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  vertical-align: middle;
+  background: var(--clr-lavender-dark);
+  margin-left: 2px;
+  animation: blink 0.8s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* ── Decision Actions Bar ─────────────────────────────────── */
+.dialogue-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+}
+
+.decision-btn {
+  padding: 0.6rem var(--space-5);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-bold);
+  border-radius: var(--radius-full);
+  cursor: pointer;
+  transition: all var(--transition-bounce);
+  border: 1.5px solid transparent;
+  font-family: var(--font-sans);
+}
+
+.decision-btn--attend {
+  background: var(--clr-mint);
+  color: var(--clr-safe-text);
+  border-color: var(--clr-safe-border);
+}
+
+.decision-btn--attend:hover {
+  background: var(--clr-mint-dark);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.decision-btn--skip {
+  background: var(--clr-peach-xlt);
+  color: var(--clr-warning-text);
+  border-color: var(--clr-peach);
+}
+
+.decision-btn--skip:hover {
+  background: var(--clr-peach);
+  color: white;
+  transform: translateY(-2px);
+}
+
+.decision-btn--force-skip {
+  background: var(--clr-danger-bg);
+  color: var(--clr-danger-text);
+  border-color: var(--clr-danger-border);
+}
+
+.decision-btn--force-skip:hover {
+  background: var(--clr-danger);
+  color: white;
+  transform: translateY(-2px);
+}
+
+/* ── Responsive ───────────────────────────────────────────── */
+@media (max-width: 720px) {
+  .characters-arena {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+  .actor-bubble {
+    width: 72px;
+    height: 72px;
+    font-size: 2.2rem;
+  }
+}

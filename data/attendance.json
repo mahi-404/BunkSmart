@@ -1,0 +1,26 @@
+{
+  "CS301": {
+    "attended": 19,
+    "total": 23
+  },
+  "CS302": {
+    "attended": 14,
+    "total": 20
+  },
+  "CS303": {
+    "attended": 10,
+    "total": 18
+  },
+  "CS304": {
+    "attended": 16,
+    "total": 20
+  },
+  "MA201": {
+    "attended": 12,
+    "total": 16
+  },
+  "CS305": {
+    "attended": 9,
+    "total": 14
+  }
+}
