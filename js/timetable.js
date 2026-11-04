@@ -3,7 +3,12 @@
 //  Person 3 owns this file.
 //  Fully integrated with logic.js and backend server.
 // ============================================================
+   import { COURSES, TIMETABLE, DAYS, escapeHtml, getCourse } from "./data.js";
+   import { getAttendance, getStatus, getSafeSkips, classesNeeded } from "./logic.js";
+   import { startClock }                          from "./clock.js";
+   import { startNotifications }                  from "./notify.js";
 
+HEAD
 import { COURSES, TIMETABLE, DAYS, escapeHtml, getCourse } from "./data.js";
 import { getAttendance, getStatus, getSafeSkips, markAttendance, syncState } from "./logic.js";
 
@@ -164,11 +169,25 @@ function renderGrid() {
               </div>
             </div>
           </div>`;
-      } else {
-        html += `
-          <div class="grid-cell${isToday ? " today-col" : ""}">
-            <div class="free-cell"><span>✦</span></div>
-          </div>`;
+            } else {
+        const running = TIMETABLE.find(s =>
+          s.day === dayIdx && mins(s.startTime) < mins(slot) && mins(s.endTime) > mins(slot));
+
+        if (running) {
+          const c = getCourse(running.courseId);
+          html += `
+            <div class="grid-cell${isToday ? " today-col" : ""}">
+              <div class="class-card" style="background:${c.color}10;border:1.5px dashed ${c.color}66"
+                   onclick="window.openDetail('${running.courseId}')">
+                <div class="cc-code" style="color:${c.color}">↑ ${escapeHtml(c.code)} continues</div>
+              </div>
+            </div>`;
+        } else {
+          html += `
+            <div class="grid-cell${isToday ? " today-col" : ""}">
+              <div class="free-cell"><span>✦</span></div>
+            </div>`;
+        }
       }
     });
   });
@@ -321,7 +340,11 @@ window.openDetail = function(courseId) {
       <div class="sheet-row">
         <span class="sheet-row-key">Recovery Plan</span>
         <span class="sheet-row-val" style="color:${statusClr}">
+<<<<<<< HEAD
+          ${classesNeeded(courseId) === 0 ? "Already safe 🎉" : classesNeeded(courseId) + " more"}
+=======
           ${percent >= 75 ? "Target achieved 🎉" : "Attend next " + Math.ceil((0.75*total - attended)/0.25) + " consecutive classes"}
+>>>>>>> 9951f14849fa72f62d26db9f04f18729146378d6
         </span>
       </div>
     </div>
