@@ -1,7 +1,6 @@
 /* ============================================================
    timetable.css  –  🌸 Pastel Aesthetic Edition
    ============================================================ */
-
 /* ── Page header ────────────────────────────────────────────── */
 .page-header {
   padding: var(--space-12) 0 var(--space-10);
@@ -259,8 +258,9 @@
 
 .grid-cell.today-col {
   background: var(--clr-blush-xlt);
-  opacity: 0.85;
 }
+
+.grid-cell.today-col:hover { background: var(--clr-blush-xlt); }
 
 .grid-cell:hover { background: var(--clr-surface-2); }
 
