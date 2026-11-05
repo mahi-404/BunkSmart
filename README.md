@@ -1,8 +1,8 @@
-# 🎒 BunkSmart: Smart Attendance Forecasting & Timetable
+# BunkSmart: Smart Attendance Forecasting & Timetable
 
 > A web app that tells college students exactly how many classes they can safely skip, and how many they must attend to recover, so they never fall below the 75% detention threshold.
 
-## 📑 Table of Contents
+## Table of Contents
 
 1. [The Problem](#-the-problem)
 2. [The Solution](#-the-solution)
@@ -19,7 +19,7 @@
 
 ---
 
-## 🎯 The Problem
+## The Problem
 
 Universities enforce a strict **75% minimum attendance** rule. Falling below it can mean detention from semester exams, loss of credits, or even losing the academic year. Students commonly struggle with:
 
@@ -27,7 +27,7 @@ Universities enforce a strict **75% minimum attendance** rule. Falling below it 
 - **Mental math is inaccurate** and fails to project future percentage drops.
 - **Late discovery.** By the time attendance slips into the danger zone (below 60%), it is often mathematically impossible to recover before the end of the semester.
 
-## 💡 The Solution
+## The Solution
 
 BunkSmart gives immediate mathematical certainty through three core functions:
 
@@ -37,7 +37,7 @@ BunkSmart gives immediate mathematical certainty through three core functions:
 | `predictSkip(courseId)` | Simulates the exact attendance drop *before* you decide to bunk |
 | `classesNeeded(courseId)` | Calculates how many consecutive classes you must attend to climb out of the danger zone |
 
-## ✨ Features
+## Features
 
 - **Interactive Daily BunkSmart Flow** (`dailyFlow.js`): a step-by-step morning check-in where *Trace* calculates your safe skips, and *Prof. Maya* shakes her head angrily if you try to bunk into the danger zone.
 - **Attendance Analytics & Trend Line**: an interactive Chart.js trend line with the mandatory 75% dashed reference threshold.
@@ -48,7 +48,7 @@ BunkSmart gives immediate mathematical certainty through three core functions:
 - **Interactive Character Stage**: the student's name appears in the attendance check-in and decision flow.
 - **Pre-class Smart Alerts & Live Clock**: notifications before class and a real-time navbar clock.
 
-## 🧮 How the Math Works
+## How the Math Works
 
 Let `a` = classes attended, `t` = total classes held, and the threshold = 75%.
 
@@ -61,7 +61,7 @@ Let `a` = classes attended, `t` = total classes held, and the threshold = 75%.
 
 **Example:** DS304 (Explainable AI) at 10/18 needs `3×18 − 4×10 = 14` consecutive classes to get back to 75%.
 
-## 🛠️ Project Structure
+## Project Structure
 
 Built with vanilla HTML, CSS, ES modules, and a zero-dependency Node.js server.
 
@@ -99,19 +99,19 @@ BunkSmart/
     └── attendance-local.test.js  # Browser storage & profile isolation tests
 ```
 
-## 📊 Sample Dataset
+## Sample Dataset
 
 BunkSmart ships with realistic B.Tech mid-semester seed data:
 
-| Course Code | Course Name | Credits | Attended / Total | Initial % | Status | Safe Bunks Left | Recovery Path |
-|---|---|:-:|:-:|:-:|:-:|:-:|---|
-| CS301 | Advanced Algorithms | 4 | 18 / 22 | 82% | 🟢 SAFE | 2 | Above 75% target |
-| DS365 | Full Stack Development | 3 | 15 / 20 | 75% | 🟢 SAFE | 0 | Borderline (0 bunks) |
-| CS351 | Software Design | 3 | 14 / 20 | 70% | 🟡 WARNING | 0 | Need 4 classes to recover |
-| DS304 | Explainable AI | 3 | 10 / 18 | 56% | 🔴 DANGER | 0 | Need 14 classes to recover |
-| EC354 | Tensor Multimodal | 3 | 16 / 20 | 80% | 🟢 SAFE | 1 | Above 75% target |
+| **Course Code** | **Course Name** | **Credits** | **Attended / Total** | **Initial %** | **Status** | **Safe Bunks Left** | **Recovery Path** |
+|-----------------|-----------------|-------------|---------------------|---------------|------------|-------------------|------------------|
+| CS301 | Advanced Algorithms | 4 | 19 / 23 | 83% | 🟢 SAFE | 2 | Above 75% target |
+| CS304 | Full Stack Development | 3 | 16 / 20 | 80% | 🟢 SAFE | 1 | Above 75% target |
+| CS305 | Software Engineering | 3 | 9 / 14 | 64% | 🔴 DANGER | 0 | Need 8 consecutive classes to recover |
+| DS301 | Explainable AI | 3 | 12 / 16 | 75% | 🟢 SAFE | 0 | Borderline (0 bunks) |
+| EC354 | Tensor Multimodal Data | 3 | 10 / 18 | 56% | 🔴 DANGER | 0 | Need 14 consecutive classes to recover |
 
-## 🔒 Server Input Validation
+## Server Input Validation
 
 The Node.js backend (`server.js`) uses **zero external dependencies** and strictly validates all incoming data:
 
@@ -125,7 +125,7 @@ The Node.js backend (`server.js`) uses **zero external dependencies** and strict
 | **Duplicate protection** | Duplicate course IDs return `409 Conflict` |
 | **Path traversal protection** | File paths are sanitized to prevent directory traversal |
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -155,7 +155,7 @@ e.g.  24BCS123
 
 Your profile and attendance are saved per roll number in this browser's `localStorage`, so they survive refreshes.
 
-## 🧪 Testing
+## Testing
 
 ```bash
 npm test
@@ -169,13 +169,13 @@ The test suite isolates its data in temporary files via the `BUNKSMART_DB` envir
 - **Logic precision:** exact 75% boundary yields 0 safe skips, 80% (16/20) yields 1 safe skip, recovery calculation for low-attendance courses, and skip-prediction drop with unsafe verdict.
 - **Browser storage:** profile isolation between roll numbers.
 
-## 💾 Data Storage Notes
+## Data Storage Notes
 
 - Student profiles and attendance live in **browser storage** (`localStorage`).
 - Data **does not sync** between browsers or devices.
 - Clearing browser site data removes saved records.
 
-## 👥 Team & Contributions
+## Team & Contributions
 
 | Member | Role | Files Owned | Responsibilities |
 |---|---|---|---|
@@ -183,7 +183,7 @@ The test suite isolates its data in temporary files via the `BUNKSMART_DB` envir
 | **Mahitha** | Person 2 | `server.js`, `test/server.test.js`, `js/logic.js`, `js/dialogue.js`, `index.html` | Backend server & input validation, automated test suite, core attendance math, dialogue engine |
 | **Swetha** | Person 3 | `timetable.html`, `dashboard.html`, `js/timetable.js`, `js/dashboard.js`, `js/clock.js`, `js/notify.js` | Weekly timetable grid, live clock, pre-class alerts, Chart.js dashboard |
 
-## 🌿 Git Workflow
+## Git Workflow
 
 - `main`: production-ready, verified release.
 - Feature branches merged through Pull Requests:
@@ -194,4 +194,3 @@ The test suite isolates its data in temporary files via the `BUNKSMART_DB` envir
 
 ---
 
-<p align="center">Made with 💖 and a healthy fear of the 75% rule.</p>
