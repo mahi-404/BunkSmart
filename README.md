@@ -1,6 +1,6 @@
 # 🎒 BunkSmart: Smart Attendance Forecasting & Timetable
 
-> A cute, pastel-themed web app that tells college students exactly how many classes they can safely skip, and how many they must attend to recover, so they never fall below the 75% detention threshold.
+> A web app that tells college students exactly how many classes they can safely skip, and how many they must attend to recover, so they never fall below the 75% detention threshold.
 
 ## 📑 Table of Contents
 
