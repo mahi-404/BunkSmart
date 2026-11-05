@@ -1,22 +1,22 @@
 {
   "CS301": {
-    "attended": 18,
-    "total": 22
+    "attended": 19,
+    "total": 23
   },
-  "DS365": {
-    "attended": 15,
-    "total": 20
-  },
-  "CS351": {
-    "attended": 14,
-    "total": 20
-  },
-  "DS304": {
+  "EC303": {
     "attended": 10,
     "total": 18
   },
-  "EC354": {
+  "CS304": {
     "attended": 16,
     "total": 20
+  },
+  "DS301": {
+    "attended": 12,
+    "total": 16
+  },
+  "CS305": {
+    "attended": 9,
+    "total": 14
   }
 }
