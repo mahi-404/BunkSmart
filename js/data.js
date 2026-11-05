@@ -1,181 +1,160 @@
 // ============================================================
-//  data.js  –  Shared data model
-//  Person 2 (logic.js) and Person 3 (timetable / dashboard)
-//  both import this file.
+//  storage.js – Persistence, LocalStorage & Server Sync
+//  Person 2 owns this file.
+//  Handles local storage caching, course management & API sync.
 // ============================================================
 
-import { loadCourses, removeRecord, saveCourses, postCourseToServer, deleteCourseFromServer } from "./storage.js";
+const KEY = "bunksmart_records"; // { [courseId]: { attended, total } }
+const COURSES_KEY = "bunksmart_courses";
+const LOG_KEY = "bunksmart_attendance_log";
 
-const DEFAULT_COURSES = [
-  {
-    id: "CS301",
-    name: "Advanced Algorithms",
-    code: "CS301",
-    instructor: "Course Instructor",
-    credits: 4,
-    totalClasses: 0,
-    attended: 0,
-    requiredPercent: 75,
-    color: "#a78bfa",
-  },
-  {
-    id: "DS365",
-    name: "Full Stack Development",
-    code: "DS365",
-    instructor: "Course Instructor",
-    credits: 3,
-    totalClasses: 0,
-    attended: 0,
-    requiredPercent: 75,
-    color: "#34d399",
-  },
-  {
-    id: "CS351",
-    name: "Software Design",
-    code: "CS351",
-    instructor: "Course Instructor",
-    credits: 3,
-    totalClasses: 0,
-    attended: 0,
-    requiredPercent: 75,
-    color: "#fb923c",
-  },
-  {
-    id: "DS304",
-    name: "Explainable AI",
-    code: "DS304",
-    instructor: "Course Instructor",
-    credits: 3,
-    totalClasses: 0,
-    attended: 0,
-    requiredPercent: 75,
-    color: "#f9a8d4",  // soft pink
-  },
-  {
-    id: "EC354",
-    name: "Tensor Multimodal",
-    code: "EC354",
-    instructor: "Course Instructor",
-    credits: 3,
-    totalClasses: 0,
-    attended: 0,
-    requiredPercent: 75,
-    color: "#2dd4bf",
-  },
-];
+export const SEED_RECORDS = {
+  CS301: { attended: 19, total: 23 }, 
+  EC303: { attended: 10, total: 18 }, 
+  CS304: { attended: 16, total: 20 }, 
+  DS301: { attended: 12, total: 16 }, 
+  CS305: { attended: 9,  total: 14 }, 
+};
 
-export const COURSES = loadCourses(DEFAULT_COURSES);
+export function loadRecords() {
+  const stored = localStorage.getItem(KEY) || localStorage.getItem("attendai_records");
+  if (!stored) {
+    saveRecords(SEED_RECORDS);
+    return { ...SEED_RECORDS };
+  }
 
-function validateCourse(course) {
-  if (!course || !/^[A-Z0-9-]{2,12}$/.test(course.id) ||
-      typeof course.name !== "string" || !course.name.trim() || course.name.length > 80 ||
-      typeof course.code !== "string" || !course.code.trim() || course.code.length > 16 ||
-      typeof course.instructor !== "string" || !course.instructor.trim() || course.instructor.length > 80 ||
-      !Number.isInteger(course.credits) || course.credits < 1 || course.credits > 30 ||
-      typeof course.color !== "string" || !/^#[0-9a-f]{6}$/i.test(course.color)) {
-    throw new TypeError("Course details are invalid. Check the ID, name, instructor, credits, and color.");
+  try {
+    const records = JSON.parse(stored);
+    if (!records || typeof records !== "object" || Array.isArray(records)) {
+      throw new Error("Saved attendance data is invalid.");
+    }
+    return records;
+  } catch {
+    saveRecords(SEED_RECORDS);
+    return { ...SEED_RECORDS };
   }
 }
 
-if (!Array.isArray(COURSES)) {
-  throw new TypeError("Saved courses must be a list.");
-}
-COURSES.forEach(validateCourse);
-if (new Set(COURSES.map(course => course.id)).size !== COURSES.length) {
-  throw new Error("Saved courses contain duplicate IDs.");
-}
-
-export async function addCourse(course) {
-  validateCourse(course);
-  if (COURSES.some(existing => existing.id === course.id)) {
-    throw new Error(`A course with ID ${course.id} already exists.`);
+export function saveRecords(records) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(records));
+  } catch (err) {
+    console.error("[Storage] Failed to save to localStorage:", err);
   }
-  const nextCourses = [...COURSES, { ...course, requiredPercent: 75 }];
-  saveCourses(nextCourses);
-  COURSES.push(nextCourses[nextCourses.length - 1]);
-  return await postCourseToServer(course);
 }
 
-export function updateCourse(courseId, updates) {
-  const index = COURSES.findIndex(course => course.id === courseId);
-  if (index < 0) throw new Error(`Course ${courseId} was not found.`);
-
-  const updatedCourse = { ...COURSES[index], ...updates, id: courseId, requiredPercent: 75 };
-  validateCourse(updatedCourse);
-  const nextCourses = COURSES.map((course, i) => i === index ? updatedCourse : course);
-  saveCourses(nextCourses);
-  COURSES[index] = updatedCourse;
+export function loadCourses(defaultCourses) {
+  const stored = localStorage.getItem(COURSES_KEY);
+  return stored ? JSON.parse(stored) : defaultCourses.map(course => ({ ...course }));
 }
 
-export async function deleteCourse(courseId) {
-  const index = COURSES.findIndex(course => course.id === courseId);
-  if (index < 0) throw new Error(`Course ${courseId} was not found.`);
-
-  const nextCourses = COURSES.filter(course => course.id !== courseId);
-  saveCourses(nextCourses);
-  COURSES.splice(index, 1);
-  removeRecord(courseId);
-  return await deleteCourseFromServer(courseId);
+export function saveCourses(courses) {
+  localStorage.setItem(COURSES_KEY, JSON.stringify(courses));
 }
 
-export function escapeHtml(value) {
-  return String(value).replace(/[&<>"']/g, character => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;",
-  })[character]);
+export function loadAttendanceLog() {
+  const stored = localStorage.getItem(LOG_KEY);
+  if (!stored) return [];
+
+  try {
+    const entries = JSON.parse(stored);
+    if (!Array.isArray(entries) || entries.some(entry =>
+      !entry || typeof entry.courseId !== "string" ||
+      typeof entry.name !== "string" || typeof entry.present !== "boolean" ||
+      !Number.isInteger(entry.percent) || typeof entry.timestamp !== "string"
+    )) {
+      return [];
+    }
+    return entries.slice(0, 30);
+  } catch {
+    return [];
+  }
 }
 
-// Weekly timetable: each entry = one class slot
-// days: 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri
-const DEFAULT_TIMETABLE = [
-  // ── Monday ─────────────────────────────────────────────────
-  { day: 0, startTime: "09:00", endTime: "10:00", courseId: "CS301", room: "A-101" },
-  { day: 0, startTime: "10:00", endTime: "11:00", courseId: "EC354", room: "B-201" },
-  { day: 0, startTime: "11:15", endTime: "12:15", courseId: "CS351", room: "A-201" },
-  { day: 0, startTime: "14:00", endTime: "15:00", courseId: "DS304", room: "C-301" },
+export function saveAttendanceLog(entries) {
+  localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+}
 
-  // ── Tuesday ─────────────────────────────────────────────────
-  { day: 1, startTime: "09:00", endTime: "10:00", courseId: "DS365", room: "B-102" },
-  { day: 1, startTime: "10:00", endTime: "11:00", courseId: "DS304", room: "A-301" },
-  { day: 1, startTime: "11:15", endTime: "12:15", courseId: "EC354", room: "B-201" },
-  { day: 1, startTime: "14:00", endTime: "16:00", courseId: "CS301", room: "Lab-1" },
+export function getRecord(courseId) {
+  const records = loadRecords();
+  const record = records[courseId] || { attended: 0, total: 0 };
+  if (!Number.isInteger(record.attended) || !Number.isInteger(record.total) ||
+      record.attended < 0 || record.total < record.attended) {
+    return { attended: 0, total: 0 };
+  }
+  return record;
+}
 
-  // ── Wednesday ────────────────────────────────────────────────
-  { day: 2, startTime: "09:00", endTime: "10:00", courseId: "CS351", room: "A-201" },
-  { day: 2, startTime: "10:00", endTime: "11:00", courseId: "CS301", room: "A-101" },
-  { day: 2, startTime: "11:15", endTime: "12:15", courseId: "DS365", room: "B-102" },
-  { day: 2, startTime: "14:00", endTime: "16:00", courseId: "DS304", room: "Lab-2" },
+export function setRecord(courseId, data) {
+  if (!Number.isInteger(data.attended) || !Number.isInteger(data.total) ||
+      data.attended < 0 || data.total < data.attended) {
+    throw new RangeError("Attendance counts must be non-negative integers.");
+  }
+  const records = loadRecords();
+  records[courseId] = data;
+  saveRecords(records);
+}
 
-  // ── Thursday ─────────────────────────────────────────────────
-  { day: 3, startTime: "09:00", endTime: "10:00", courseId: "EC354", room: "B-201" },
-  { day: 3, startTime: "10:00", endTime: "11:00", courseId: "DS304", room: "C-301" },
-  { day: 3, startTime: "11:15", endTime: "12:15", courseId: "DS304", room: "A-301" },
-  { day: 3, startTime: "14:00", endTime: "15:00", courseId: "DS365", room: "B-102" },
+export function removeRecord(courseId) {
+  const records = loadRecords();
+  delete records[courseId];
+  saveRecords(records);
+}
 
-  // ── Friday ───────────────────────────────────────────────────
-  { day: 4, startTime: "09:00", endTime: "10:00", courseId: "CS351", room: "A-201" },
-  { day: 4, startTime: "10:00", endTime: "11:00", courseId: "DS304", room: "C-301" },
-  { day: 4, startTime: "11:15", endTime: "12:15", courseId: "CS301", room: "A-101" },
-  { day: 4, startTime: "14:00", endTime: "16:00", courseId: "DS365", room: "Lab-3" },
-];
+export function clearAll() {
+  localStorage.removeItem(KEY);
+  localStorage.removeItem(LOG_KEY);
+}
 
-export const TIMETABLE = DEFAULT_TIMETABLE.filter(slot =>
-  COURSES.some(course => course.id === slot.courseId)
-);
+// ── Backend Server Synchronization ──────────────────────────
 
-// Day labels
-export const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
+export async function syncFromServer() {
+  try {
+    const res = await fetch("/api/attendance", {
+      headers: { "Cache-Control": "no-cache" }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data && data.records) {
+      const records = loadRecords();
+      for (const [id, rec] of Object.entries(data.records)) {
+        records[id] = { attended: rec.attended, total: rec.total };
+      }
+      saveRecords(records);
+      return { online: true, records };
+    }
+  } catch {
+    // Offline / running without backend server
+  }
+  return { online: false, records: loadRecords() };
+}
 
-// Time slots displayed in the timetable grid
-export const TIME_SLOTS = [
-  "09:00", "10:00", "11:15", "12:15",
-  "13:00", "14:00", "15:00", "16:00",
-];
-
-// Helper: get course object by id
-export function getCourse(courseId) {
-  return COURSES.find(c => c.id === courseId) || null;
+export async function postAttendanceMark(courseId, present) {
+  try {
+    const res = await fetch("/api/attendance/mark", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ courseId, present })
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      return { success: false, error: result.message || result.error || "Failed to mark attendance" };
+    }
+    const records = loadRecords();
+    records[courseId] = {
+      attended: result.record.attended,
+      total: result.record.total
+    };
+    saveRecords(records);
+    return { success: true, record: result.record };
+  } catch (err) {
+    const records = loadRecords();
+    const current = records[courseId] || { attended: 0, total: 0 };
+    records[courseId] = {
+      attended: present ? current.attended + 1 : current.attended,
+      total: current.total + 1
+    };
+    saveRecords(records);
+    return { success: true, offline: true, error: err.message };
+  }
 }
