@@ -4,7 +4,7 @@
 //  both import this file.
 // ============================================================
 
-import { loadCourses, removeRecord, saveCourses } from "./storage.js";
+import { loadCourses, removeRecord, saveCourses, postCourseToServer, deleteCourseFromServer } from "./storage.js";
 
 const DEFAULT_COURSES = [
   {
@@ -49,7 +49,7 @@ const DEFAULT_COURSES = [
     totalClasses: 0,
     attended: 0,
     requiredPercent: 75,
-    color: "#f87171",
+    color: "#f9a8d4",  // soft pink
   },
   {
     id: "EC354",
@@ -85,7 +85,7 @@ if (new Set(COURSES.map(course => course.id)).size !== COURSES.length) {
   throw new Error("Saved courses contain duplicate IDs.");
 }
 
-export function addCourse(course) {
+export async function addCourse(course) {
   validateCourse(course);
   if (COURSES.some(existing => existing.id === course.id)) {
     throw new Error(`A course with ID ${course.id} already exists.`);
@@ -93,6 +93,7 @@ export function addCourse(course) {
   const nextCourses = [...COURSES, { ...course, requiredPercent: 75 }];
   saveCourses(nextCourses);
   COURSES.push(nextCourses[nextCourses.length - 1]);
+  return await postCourseToServer(course);
 }
 
 export function updateCourse(courseId, updates) {
@@ -106,7 +107,7 @@ export function updateCourse(courseId, updates) {
   COURSES[index] = updatedCourse;
 }
 
-export function deleteCourse(courseId) {
+export async function deleteCourse(courseId) {
   const index = COURSES.findIndex(course => course.id === courseId);
   if (index < 0) throw new Error(`Course ${courseId} was not found.`);
 
@@ -114,6 +115,7 @@ export function deleteCourse(courseId) {
   saveCourses(nextCourses);
   COURSES.splice(index, 1);
   removeRecord(courseId);
+  return await deleteCourseFromServer(courseId);
 }
 
 export function escapeHtml(value) {

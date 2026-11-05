@@ -72,8 +72,12 @@ function getScopedKey(base, specificRoll = null) {
 
 // ── Attendance Records ──────────────────────────────────────
 export function loadRecords() {
+feature/daily-attendance-flow
   const key = getScopedKey(BASE_KEY);
   const stored = localStorage.getItem(key) || localStorage.getItem(BASE_KEY) || localStorage.getItem("attendai_records");
+
+
+  const stored = localStorage.getItem(KEY);
 
   if (!stored) {
     saveRecords(SEED_RECORDS);
@@ -267,15 +271,70 @@ export async function postAttendanceMark(courseId, present) {
       total: result.record.total
     };
     saveRecords(records);
-    return { success: true, record: result.record };
+    return { success: true, record: result.record, offline: false };
   } catch (err) {
-    const records = loadRecords();
-    const current = records[courseId] || { attended: 0, total: 0 };
-    records[courseId] = {
-      attended: present ? current.attended + 1 : current.attended,
-      total: current.total + 1
-    };
-    saveRecords(records);
+    // Network failure / offline: do NOT increment again!
+    // The optimistic update in markAttendance already recorded it in local storage.
+    return { success: true, offline: true, error: err.message };
+  }
+}
+
+// ── Course API Synchronization ──────────────────────────────
+
+export async function syncCoursesFromServer() {
+  try {
+    const res = await fetch("/api/courses", {
+      headers: { "Cache-Control": "no-cache" }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    if (data && Array.isArray(data.courses) && data.courses.length > 0) {
+      const courses = data.courses.map(c => ({
+        id: c.id,
+        name: c.name,
+        code: c.code,
+        instructor: c.instructor,
+        credits: c.credits,
+        color: c.color,
+        requiredPercent: c.requiredPercent || 75
+      }));
+      saveCourses(courses);
+      return { online: true, courses };
+    }
+  } catch {
+    // Offline mode
+  }
+  return { online: false, courses: loadCourses([]) };
+}
+
+export async function postCourseToServer(course) {
+  try {
+    const res = await fetch("/api/courses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(course)
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      return { success: false, error: result.message || result.error || "Failed to save course to server" };
+    }
+    return { success: true, course: result.course };
+  } catch (err) {
+    return { success: true, offline: true, error: err.message };
+  }
+}
+
+export async function deleteCourseFromServer(courseId) {
+  try {
+    const res = await fetch(`/api/courses?id=${encodeURIComponent(courseId)}`, {
+      method: "DELETE"
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      return { success: false, error: result.message || result.error || "Failed to delete course on server" };
+    }
+    return { success: true };
+  } catch (err) {
     return { success: true, offline: true, error: err.message };
   }
 }

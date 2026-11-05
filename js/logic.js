@@ -23,30 +23,43 @@ export function getAttendance(courseId) {
   const exactFraction = total === 0 ? 0 : attended / total;
   const percent = total === 0 ? 0 : Math.round(exactFraction * 100);
   return { attended, total, percent, exactFraction };
+ * Returns { attended, total, percent }
+ * Uses Math.floor to never show false rounded 75% when raw ratio < 0.75
+ */
+export function getAttendance(courseId) {
+  const { attended, total } = getRecord(courseId);
+  const percent = total === 0 ? 0 : Math.floor((attended / total) * 100);
+  return { attended, total, percent };
 }
 
 /**
  * getStatus(courseId)
  * Returns "safe" (>= requiredPercent) | "warning" (60–74%) | "danger" (<60%)
+ * Evaluates raw mathematical ratio to prevent near-threshold rounding errors
  */
 export function getStatus(courseId) {
-  const { exactFraction, percent } = getAttendance(courseId);
+  const { attended, total, exactFraction } = getAttendance(courseId);
+
+  // No classes conducted yet
+  if (total === 0) return "safe";
+
   const requiredPercent = getCourse(courseId)?.requiredPercent ?? 75;
   const requiredRate = requiredPercent / 100;
 
-  // Real projected fraction takes precedence over rounding
-  if (exactFraction >= requiredRate || percent >= requiredPercent) return "safe";
-  if (percent >= 60) return "warning";
+  // Use the exact attendance ratio, not the rounded display percentage
+  if (exactFraction >= requiredRate) return "safe";
+
+  if (exactFraction >= 0.6) return "warning";
+
   return "danger";
 }
-
 /**
  * getSafeSkips(courseId)
  * Calculates how many consecutive classes can be skipped while staying >= target.
  * Formula: attended / (total + x) >= requiredRate -> x <= (attended / requiredRate) - total
  */
 export function getSafeSkips(courseId) {
-  const { attended, total } = getAttendance(courseId);
+  const { attended, total } = getRecord(courseId);
   const requiredRate = (getCourse(courseId)?.requiredPercent ?? 75) / 100;
   if (total === 0 || attended === 0) return 0;
 
@@ -100,25 +113,42 @@ export function classesNeeded(courseId) {
   const numerator = (requiredRate * total) - attended;
   const denominator = 1 - requiredRate;
   return Math.max(0, Math.ceil(numerator / denominator));
+export function predictSkip(courseId) {
+  const { attended, total } = getRecord(courseId);
+  const newTotal = total + 1;
+  return newTotal === 0 ? 0 : Math.floor((attended / newTotal) * 100);
 }
 
 /**
  * markAttendance(courseId, present)
- * Synchronously updates local state and fires server sync.
+/**
+ * markAttendance(courseId, present)
+ * Synchronously updates local state and fires asynchronous server sync.
+ * Automatically rolls back the optimistic update if server rejects the change.
  */
 export async function markAttendance(courseId, present) {
   if (!getCourse(courseId)) throw new Error(`Course ${courseId} was not found.`);
   if (typeof present !== "boolean") throw new TypeError("Attendance must be marked present or absent.");
 
-  // 1. Optimistic synchronous update
-  const { attended, total } = getRecord(courseId);
+  // 1. Save previous state for rollback
+  const previous = getRecord(courseId);
+
+  // 2. Optimistic synchronous update for instant UI feedback
+  const { attended, total } = previous;
   setRecord(courseId, {
-    attended: present ? attended + 1 : attended,
-    total: total + 1,
+    attended: present ? previous.attended + 1 : previous.attended,
+    total: previous.total + 1,
   });
 
   // 2. Synchronize with backend server validation
-  return await postAttendanceMark(courseId, present);
+  const result = await postAttendanceMark(courseId, present);
+
+  // Revert optimistic update if server rejected the request
+  if (!result.success) {
+    setRecord(courseId, previous);
+  }
+
+  return result;
 }
 
 /**
@@ -151,6 +181,13 @@ export function getTodayClasses() {
       course: getCourse(slot.courseId)
     }))
   };
+export function classesNeeded(courseId) {
+  const { attended, total } = getRecord(courseId);
+  if (total === 0) return 0;
+  const rawRatio = attended / total;
+  const requiredRate = (getCourse(courseId)?.requiredPercent ?? 75) / 100;
+  if (rawRatio >= requiredRate) return 0;
+  return Math.ceil((requiredRate * total - attended) / (1 - requiredRate));
 }
 
 /**

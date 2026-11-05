@@ -12,8 +12,12 @@ import {
   markAttendance, classesNeeded, syncState, undoAttendance
 } from "./logic.js";
 import {
+feature/daily-attendance-flow
   clearAll as clearStorage, loadAttendanceLog, saveAttendanceLog,
   getStudentProfile, exportAttendanceCSV
+
+  clearAll as clearStorage, loadAttendanceLog, saveAttendanceLog, syncCoursesFromServer,
+main
 } from "./storage.js";
 import { startClock } from "./clock.js";
 import { initDailyFlow, openDailyFlow } from "./dailyFlow.js";
@@ -66,6 +70,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   bindCourseForm();
 
   // Fresh sync from server (survives refreshes & multi-tab edits)
+  await syncCoursesFromServer();
   await syncState();
   renderSummary();
   renderCards();
@@ -332,17 +337,29 @@ window.mark = async function(courseId, present) {
   btn?.classList.add("popped");
   setTimeout(() => btn?.classList.remove("popped"), 350);
 
+  let res;
   try {
     // Send to logic & server
-    await markAttendance(courseId, present);
+    res = await markAttendance(courseId, present);
   } catch (error) {
     showToast("Couldn't save attendance", error.message, "danger");
     return;
   }
 
-  // Refresh card & summary
   const course = getCourse(courseId);
   const card = document.getElementById(`card-${courseId}`);
+
+  // If server rejected the mark (e.g. unknown course or constraint violation):
+  if (!res.success) {
+    showToast("Server rejected update", res.error || "Could not save to server", "danger");
+    if (card && course) {
+      card.outerHTML = buildCard(course);
+    }
+    renderSummary();
+    return;
+  }
+
+  // Refresh card & summary
   if (card && course) {
     card.outerHTML = buildCard(course);
   }
@@ -357,9 +374,10 @@ window.mark = async function(courseId, present) {
   const storySelect = document.getElementById("story-course");
   if (storySelect) storySelect.value = courseId;
 
+  const storageDestination = res.offline ? "Saved locally (offline)" : "Saved to server";
   showToast(
     present ? `✅ Marked present for ${course.code}` : `❌ Marked absent for ${course.code}`,
-    `New Attendance: ${percent}% (${status.toUpperCase()}) · Saved to server`,
+    `New Attendance: ${percent}% (${status.toUpperCase()}) · ${storageDestination}`,
     status
   );
   renderStory(present ? "present" : "absent");
@@ -474,7 +492,7 @@ function renderLog() {
 // ── Course management ──────────────────────────────────────────
 function bindCourseForm() {
   const form = document.getElementById("course-form");
-  form?.addEventListener("submit", event => {
+  form?.addEventListener("submit", async event => {
     event.preventDefault();
     const message = document.getElementById("course-form-message");
     const course = {
@@ -491,8 +509,9 @@ function bindCourseForm() {
         updateCourse(editingCourseId, course);
         showToast("Course updated", `${course.code || course.id} is ready.`, "safe");
       } else {
-        addCourse(course);
-        showToast("Course added", `${course.name} is ready to track.`, "safe");
+        const res = await addCourse(course);
+        const destination = res && res.offline ? "Saved locally (offline)" : "Saved to server";
+        showToast("Course added", `${course.name} is ready to track · ${destination}`, "safe");
       }
       resetCourseForm();
       renderSummary();
@@ -538,11 +557,11 @@ window.editCourse = function(courseId) {
   document.getElementById("course-manager").scrollIntoView({ behavior: "smooth", block: "center" });
 };
 
-window.removeCourse = function(courseId) {
+window.removeCourse = async function(courseId) {
   const course = getCourse(courseId);
   if (!course || !confirm(`Delete ${course.name} and its attendance record? This cannot be undone.`)) return;
   try {
-    deleteCourse(courseId);
+    await deleteCourse(courseId);
     for (let i = logEntries.length - 1; i >= 0; i--) {
       if (logEntries[i].courseId === courseId) logEntries.splice(i, 1);
     }
@@ -552,7 +571,7 @@ window.removeCourse = function(courseId) {
     renderCards();
     renderStory();
     renderLog();
-    showToast("Course deleted", `${course.code} and its attendance record were removed.`, "info");
+    showToast("Course deleted", `${course.code} and its attendance record were removed from server.`, "info");
   } catch (error) {
     showToast("Course changes need attention", error.message, "danger");
   }

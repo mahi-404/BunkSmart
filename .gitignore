@@ -5,3 +5,7 @@ node_modules/
 .vscode/
 .idea/
 *.log
+
+# Live and temporary test database files
+data/test-*.json
+data/courses.json
