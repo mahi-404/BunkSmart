@@ -20,9 +20,9 @@ BunkSmart gives immediate mathematical certainty:
 - **Interactive Daily BunkSmart Flow (`dailyFlow.js`)**: Step-by-step morning check-in where Trace calculates safe skips and Prof. Maya shakes her head angrily if you try to bunk into the danger zone!
 - **Attendance Analytics & Trend Line**: Interactive Chart.js trend line with the mandatory 75% dashed reference threshold.
 - **Student Profile Isolation**: Profiles require a name and a roll number in the format `24BCS123`. Attendance, courses, and logs are stored separately per roll number in browser `localStorage`.
-- **Scheduled Attendance Tracking**: Classes are counted after their timetable end time; an unmarked class is recorded absent. Use the timetable to correct an ended class, and refreshes preserve all browser-saved records.
-- **Upcoming Class Plans**: Save or change an Attend/Skip plan on each upcoming timetable class. Plans are stored per student in browser storage and do not affect attendance totals.
-- **Undo Marking & CSV Export**: One-click accidental mark reversal and CSV report download.
+- **Scheduled Attendance Tracking**: Only classes explicitly marked present or absent on the timetable affect attendance totals. Marks can be changed without double-counting, and browser-saved records survive refreshes.
+- **Daily and Upcoming Class Plans**: Save an advisory Attend/Skip plan in browser storage. Plans do not affect attendance totals; record the actual result separately after class.
+- **CSV Export**: Download a CSV attendance report from the tracker.
 - **Interactive Character Stage**: The student's name appears in the attendance check-in and decision flow.
 
 ---
@@ -65,7 +65,10 @@ BunkSmart/
     └── attendance-local.test.js # Browser storage and profile isolation tests
 ```
 
-### Realistic Engineering Dataset
+### Server API Seed Dataset
+
+The following mid-semester records seed the standalone server API demo (`data/attendance.json`). The browser app starts each new local student profile with empty attendance records and stores marks per roll number in that browser; the browser UI currently does not sync its records to the server.
+
 | Course Code | Course Name | Credits | Attended / Total | Initial % | Status | Safe Bunks Left | Recovery Path |
 |---|---|---|---|---|---|---|---|
 | **CS301** | Advanced Algorithms | 4 | 18 / 22 | 82% | `SAFE` | **2 bunks** | Above 75% target |
@@ -79,7 +82,7 @@ BunkSmart/
 The Node.js backend server (`server.js`) uses zero external dependencies and enforces strict validation on all incoming data:
 1. **JSON Syntax Integrity**: Rejects malformed JSON with `400 Bad Request`.
 2. **Whitelisted Course IDs**: Rejects unknown course IDs (e.g. `INVALID_999`) with `400 Bad Request: Unknown courseId`.
-3. **Dynamic Course Support**: Accepts validated `POST /api/courses` and `DELETE /api/courses` to dynamically add/remove courses across both frontend and server.
+3. **Dynamic Course Support**: The server accepts validated `POST /api/courses` and `DELETE /api/courses` requests. Browser-managed courses are stored locally and are not synchronized to the server.
 4. **Type Strictness**: Enforces that `present` is strictly a boolean (`true`/`false`), rejecting strings like `"yes"` or numbers.
 5. **Logical Bounds**: Rejects invalid values like `attended > total` (e.g. 25/20) or negative numbers with `400 Logical Constraint Error`.
 6. **Path Traversal Protection**: Sanitizes file paths to prevent directory traversal.
