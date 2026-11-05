@@ -4,33 +4,32 @@
    ============================================================ */
 
 :root {
-  /* ── Core pastel palette ─────────────────────────────────── */
-  --clr-lavender:       #c4b5fd;   /* soft violet */
-  --clr-lavender-dark:  #a78bfa;   /* deeper violet */
-  --clr-lavender-xlt:   #ede9fe;   /* very light lavender */
-  --clr-lavender-glow:  rgba(196,181,253,0.40);
+  /* ── Bright, playful palette ───────────────────────────────── */
+  --clr-lavender:       #baa6ff;
+  --clr-lavender-dark:  #8d6af7;
+  --clr-lavender-xlt:   #f2ecff;
+  --clr-lavender-glow:  rgba(186,166,255,0.45);
 
-  --clr-blush:          #f9a8d4;   /* pastel pink */
-  --clr-blush-dark:     #f472b6;   /* deeper pink */
-  --clr-blush-xlt:      #fce7f3;   /* lightest pink */
-  --clr-blush-glow:     rgba(249,168,212,0.40);
+  --clr-blush:          #ff8db8;
+  --clr-blush-dark:     #f35c98;
+  --clr-blush-xlt:      #ffe1f0;
+  --clr-blush-glow:     rgba(255,141,184,0.38);
 
-  --clr-mint:           #6ee7b7;   /* pastel green */
-  --clr-mint-dark:      #34d399;
-  --clr-mint-xlt:       #d1fae5;
+  --clr-mint:           #7feec5;
+  --clr-mint-dark:      #32c9a0;
+  --clr-mint-xlt:       #e9fff6;
 
-  --clr-peach:          #fdba74;   /* pastel orange */
-  --clr-peach-dark:     #fb923c;
-  --clr-peach-xlt:      #ffedd5;
+  --clr-peach:          #ffb57d;
+  --clr-peach-dark:     #ff8e4c;
+  --clr-peach-xlt:      #ffe3ef;
 
-  --clr-sky:            #7dd3fc;   /* pastel blue */
-  --clr-sky-dark:       #38bdf8;
-  --clr-sky-xlt:        #e0f2fe;
+  --clr-sky:            #7ad6ff;
+  --clr-sky-dark:       #3bb8f0;
+  --clr-sky-xlt:        #eaf9ff;
 
-  --clr-lemon:          #fde68a;   /* pastel yellow */
-  --clr-lemon-xlt:      #fefce8;
+  --clr-lemon:          #ffe778;
+  --clr-lemon-xlt:      #fff1a8;
 
-  /* Brand = lavender as primary */
   --clr-primary:        var(--clr-lavender);
   --clr-primary-dark:   var(--clr-lavender-dark);
   --clr-primary-xlt:    var(--clr-lavender-xlt);
@@ -41,52 +40,52 @@
   --clr-accent-glow:    var(--clr-blush-glow);
 
   /* ── Status ──────────────────────────────────────────────── */
-  --clr-safe:           #34d399;
-  --clr-safe-bg:        #d1fae5;
-  --clr-safe-text:      #065f46;
-  --clr-safe-border:    #6ee7b7;
+  --clr-safe:           #2ecb9d;
+  --clr-safe-bg:        #dffdf6;
+  --clr-safe-text:      #0b6b52;
+  --clr-safe-border:    #7feec5;
 
-  --clr-warning:        #f59e0b;
-  --clr-warning-bg:     #fef3c7;
-  --clr-warning-text:   #92400e;
-  --clr-warning-border: #fcd34d;
+  --clr-warning:        #ffb423;
+  --clr-warning-bg:     #fff0a8;
+  --clr-warning-text:   #8a5b00;
+  --clr-warning-border: #ffd96b;
 
-  --clr-danger:         #f87171;
-  --clr-danger-bg:      #fee2e2;
-  --clr-danger-text:    #991b1b;
-  --clr-danger-border:  #fca5a5;
+  --clr-danger:         #ff6b7d;
+  --clr-danger-bg:      #ffe4e7;
+  --clr-danger-text:    #a1213a;
+  --clr-danger-border:  #ff9bb0;
 
-  /* ── Background layers (the pastel magic) ────────────────── */
-  --clr-bg:             #faf5ff;   /* very soft lavender-white */
-  --clr-bg-2:           #fff0f6;   /* pinky white */
-  --clr-surface:        #ffffff;   /* pure white cards */
-  --clr-surface-2:      #f9f5ff;   /* card hover */
-  --clr-border:         #e9d5ff;   /* lavender border */
-  --clr-border-soft:    #f3e8ff;
+  /* ── Background layers ───────────────────────────────────── */
+  --clr-bg:             #f0eaff;
+  --clr-bg-2:           #e3f7ff;
+  --clr-surface:        #ffffff;
+  --clr-surface-2:      #f5edff;
+  --clr-border:         rgba(114, 82, 156, 0.18);
+  --clr-border-soft:    rgba(114, 82, 156, 0.10);
 
   /* ── Text ─────────────────────────────────────────────────── */
-  --clr-text:           #3b1f6e;   /* deep violet-purple */
-  --clr-text-soft:      #6d4899;   /* medium purple */
-  --clr-text-muted:     #9d7ec2;   /* muted lavender */
-  --clr-text-dim:       #c4b0e0;   /* very dim */
+  --clr-text:           #221b2d;
+  --clr-text-soft:      #5d4b78;
+  --clr-text-muted:     #7a6898;
+  --clr-text-dim:       #b7a9cf;
   --clr-text-inverse:   #ffffff;
 
   /* ── Character colours ───────────────────────────────────── */
-  --clr-student:        #a78bfa;
-  --clr-tracker:        #34d399;
-  --clr-instructor:     #fb923c;
+  --clr-student:        #8d6af7;
+  --clr-tracker:        #32c9a0;
+  --clr-instructor:     #ff8e4c;
 
-  /* ── Subject colours (pastel-vivid mix) ──────────────────── */
-  --subject-cs301:      #a78bfa;   /* lavender */
-  --subject-cs302:      #34d399;   /* mint */
-  --subject-cs303:      #fb923c;   /* peach */
-  --subject-cs304:      #f87171;   /* blush red */
-  --subject-ma201:      #f9a8d4;   /* pink */
-  --subject-cs305:      #7dd3fc;   /* sky */
+  /* ── Subject colours ─────────────────────────────────────── */
+  --subject-cs301:      #9d82ff;
+  --subject-cs302:      #56d6a8;
+  --subject-cs303:      #ffad6d;
+  --subject-cs304:      #ff7b92;
+  --subject-ma201:      #ff9bc2;
+  --subject-cs305:      #6ec9ff;
 
   /* ── Typography ─────────────────────────────────────────── */
-  --font-sans:    'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
-  --font-display: 'Plus Jakarta Sans', sans-serif;
+  --font-sans:    'Bricolage Grotesque', 'Segoe UI', sans-serif;
+  --font-display: 'Fraunces', Georgia, serif;
   --font-mono:    'JetBrains Mono', monospace;
 
   --fs-xs:   0.72rem;
@@ -121,12 +120,12 @@
   --space-16: 4rem;
 
   /* ── Border radius (bubbly!) ─────────────────────────────── */
-  --radius-sm:   0.5rem;
-  --radius-md:   0.75rem;
-  --radius-lg:   1rem;
-  --radius-xl:   1.5rem;
-  --radius-2xl:  2rem;
-  --radius-3xl:  2.5rem;
+  --radius-sm:   0.25rem;
+  --radius-md:   0.5rem;
+  --radius-lg:   0.75rem;
+  --radius-xl:   1rem;
+  --radius-2xl:  1.25rem;
+  --radius-3xl:  1.5rem;
   --radius-full: 9999px;
 
   /* ── Soft pastel shadows ─────────────────────────────────── */

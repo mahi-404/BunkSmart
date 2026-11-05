@@ -2,7 +2,7 @@
 
 import {
   getRecord, setRecord, syncFromServer, undoLastAttendanceMark,
-  reconcileScheduledClasses, recordScheduledClass
+  recordScheduledClass
 } from "./storage.js";
 import { getCourse, TIMETABLE, DAYS } from "./data.js";
 
@@ -119,7 +119,6 @@ export function getTodayClasses() {
 }
 
 export async function syncState() {
-  reconcileScheduledClasses(TIMETABLE);
   return syncFromServer();
 }
 

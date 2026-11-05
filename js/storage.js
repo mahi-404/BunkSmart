@@ -7,7 +7,6 @@ const BASE_COURSES_KEY = "bunksmart_courses";
 const BASE_LOG_KEY = "bunksmart_attendance_log";
 const BASE_SESSIONS_KEY = "bunksmart_class_sessions";
 const BASE_PLANS_KEY = "bunksmart_attendance_plans";
-const BASE_TRACKING_START_KEY = "bunksmart_tracking_start";
 const PROFILE_KEY = "bunksmart_student_profile";
 
 export const SEED_RECORDS = {
@@ -66,11 +65,6 @@ export function saveStudentProfile(profile) {
   if (!localStorage.getItem(studentKey)) {
     localStorage.setItem(studentKey, JSON.stringify(SEED_RECORDS));
   }
-  const trackingStartKey = getScopedKey(BASE_TRACKING_START_KEY, rollNumber);
-  if (!localStorage.getItem(trackingStartKey)) {
-    localStorage.setItem(trackingStartKey, new Date().toISOString());
-  }
-
   return clean;
 }
 
@@ -231,71 +225,6 @@ export function recordScheduledClass(session, present) {
   return { ...sessions[session.id], record: nextRecord };
 }
 
-export function getAttendanceTrackingStart() {
-  const profile = getStudentProfile();
-  if (!profile) return null;
-
-  const key = getScopedKey(BASE_TRACKING_START_KEY);
-  const stored = localStorage.getItem(key);
-  if (stored) {
-    const parsed = new Date(stored);
-    if (!Number.isNaN(parsed.getTime())) return parsed;
-  }
-
-  const startedAt = new Date();
-  localStorage.setItem(key, startedAt.toISOString());
-
-  if (!profile.createdAt) {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify({
-      ...profile,
-      createdAt: startedAt.toISOString(),
-    }));
-  }
-  return startedAt;
-}
-
-export function reconcileScheduledClasses(timetable, now = new Date()) {
-  const startedAt = getAttendanceTrackingStart();
-  if (!startedAt) return 0;
-
-  const cursor = new Date(startedAt);
-  cursor.setHours(0, 0, 0, 0);
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  let added = 0;
-
-  for (; cursor <= today; cursor.setDate(cursor.getDate() + 1)) {
-    const weekday = (cursor.getDay() + 6) % 7;
-    for (const slot of timetable) {
-      if (slot.day !== weekday) continue;
-
-      const [endHour, endMinute] = slot.endTime.split(":").map(Number);
-      const endsAt = new Date(cursor);
-      endsAt.setHours(endHour, endMinute, 0, 0);
-      if (endsAt > now || endsAt < startedAt) continue;
-
-      const date = [
-        cursor.getFullYear(),
-        String(cursor.getMonth() + 1).padStart(2, "0"),
-        String(cursor.getDate()).padStart(2, "0"),
-      ].join("-");
-      const id = `${date}_${slot.startTime}_${slot.courseId}`;
-      if (!getScheduledClass(id)) {
-        recordScheduledClass({
-          id,
-          date,
-          startTime: slot.startTime,
-          endTime: slot.endTime,
-          courseId: slot.courseId,
-        }, false);
-        added++;
-      }
-      removeAttendancePlan(id);
-    }
-  }
-  return added;
-}
-
 export function getRecord(courseId) {
   const records = loadRecords();
   const record = records[courseId] || { attended: 0, total: 0 };
@@ -393,7 +322,6 @@ export function clearAll() {
   localStorage.removeItem(logKey);
   localStorage.removeItem(sessionsKey);
   localStorage.removeItem(plansKey);
-  localStorage.setItem(getScopedKey(BASE_TRACKING_START_KEY), new Date().toISOString());
 }
 
 // ── Backend Server Synchronization ──────────────────────────

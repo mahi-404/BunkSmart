@@ -7,7 +7,7 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
@@ -55,52 +55,51 @@
     <p class="hero-sub">
       Track attendance, see the effect of an absence, and keep an eye on your required attendance.
     </p>
-    <!-- Student Login -->
-<div class="student-login">
-  <h3 id="student-greeting">Welcome to BunkSmart</h3>
-  <p>Enter your name and college roll number to save your attendance on this browser.</p>
 
-  <form id="student-login-form" novalidate>
-    <input
-      type="text"
-      id="student-name"
-      placeholder="Your name"
-      aria-label="Your name"
-      autocomplete="name"
-      maxlength="80"
-      required
-    />
+    <div class="student-login">
+      <h3 id="student-greeting">Welcome to BunkSmart</h3>
+      <p>Enter your name and college roll number to save your attendance on this browser.</p>
 
-    <input
-      type="text"
-      id="student-roll"
-      placeholder="24BCS123"
-      aria-label="College roll number"
-      aria-describedby="roll-hint profile-message"
-      autocomplete="off"
-      autocapitalize="characters"
-      maxlength="8"
-      pattern="[0-9]{2}B(CS|DS|EC)[0-9]{3}"
-      title="Use the format 24BCS123: two year digits, B, CS/DS/EC, and three digits."
-      required
-    />
+      <form id="student-login-form" novalidate>
+        <input
+          type="text"
+          id="student-name"
+          placeholder="Your name"
+          aria-label="Your name"
+          autocomplete="name"
+          maxlength="80"
+          required
+        />
 
-    <button type="submit" class="btn btn--primary btn--lg">
-      Save profile
-    </button>
-  </form>
+        <input
+          type="text"
+          id="student-roll"
+          placeholder="24BCS123"
+          aria-label="College roll number"
+          aria-describedby="roll-hint profile-message"
+          autocomplete="off"
+          autocapitalize="characters"
+          maxlength="8"
+          pattern="[0-9]{2}B(CS|DS|EC)[0-9]{3}"
+          title="Use the format 24BCS123: two year digits, B, CS/DS/EC, and three digits."
+          required
+        />
 
-  <p id="roll-hint" class="login-hint">Format: two year digits, B, CS, DS, or EC, then three digits (for example, 24BCS123).</p>
-  <p id="profile-message" class="login-message" role="status" aria-live="polite"></p>
-  <button id="refresh-profile" class="btn btn--ghost" type="button" hidden>Refresh app</button>
-</div>
+        <button type="submit" class="btn btn--primary btn--lg">
+          Save profile
+        </button>
+      </form>
+
+      <p id="roll-hint" class="login-hint">Format: two year digits, B, CS, DS, or EC, then three digits (for example, 24BCS123).</p>
+      <p id="profile-message" class="login-message" role="status" aria-live="polite"></p>
+      <button id="refresh-profile" class="btn btn--ghost" type="button" hidden>Refresh app</button>
+    </div>
 
     <div class="hero-actions">
       <a href="timetable.html" class="btn btn--primary btn--lg">View timetable</a>
-      <a href="tracker.html"   class="btn btn--ghost  btn--lg">Track attendance</a>
+      <a href="tracker.html" class="btn btn--ghost btn--lg">Track attendance</a>
     </div>
 
-    <!-- Quick-stat pills -->
     <div class="hero-pills" id="hero-pills"></div>
   </div>
 </section>
@@ -274,6 +273,33 @@
   </div>
 </footer>
 
+<div class="flower-field" id="flower-field" aria-hidden="true">
+  <span class="flower flower--pink" style="--x:1%; --size:24px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:5%; --size:29px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:9%; --size:21px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:13%; --size:27px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:17%; --size:23px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:21%; --size:30px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:25%; --size:22px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:29%; --size:27px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:33%; --size:23px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:37%; --size:30px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:41%; --size:22px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:45%; --size:28px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:49%; --size:23px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:53%; --size:30px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:57%; --size:22px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:61%; --size:28px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:65%; --size:23px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:69%; --size:30px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:73%; --size:22px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:77%; --size:28px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:81%; --size:23px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:85%; --size:30px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:89%; --size:22px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:93%; --size:28px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+  <span class="flower flower--pink" style="--x:97%; --size:23px;"><span class="flower__stem"></span><span class="flower__leaf"></span><span class="flower__bloom"><i></i><i></i><i></i><i></i><i></i><i></i><b></b></span></span>
+</div>
 
 <!-- Toast -->
 <div class="toast-container" id="toast-container"></div>
@@ -290,6 +316,22 @@
   } from "./js/storage.js";
 
   startClock("navbar-clock");
+
+  const flowerField = document.getElementById("flower-field");
+  const flowers = flowerField ? [...flowerField.querySelectorAll(".flower")] : [];
+
+  window.addEventListener("pointermove", (event) => {
+    flowers.forEach((flower) => {
+      const baseX = Number.parseFloat(getComputedStyle(flower).getPropertyValue("--x")) || 0;
+      const distance = event.clientX - (baseX / 100) * window.innerWidth;
+      const influence = Math.max(0, 1 - Math.abs(distance) / 240);
+      const direction = Math.sign(distance);
+      const shift = direction * influence * 8;
+      const tilt = direction * influence * 12;
+      const lift = influence * 6 * (1 - event.clientY / window.innerHeight);
+      flower.style.transform = `translate3d(${shift}px, ${-lift}px, 0) rotate(${tilt}deg)`;
+    });
+  });
 
   // Load existing student profile
   const existingProfile = getStudentProfile();
