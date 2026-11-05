@@ -4,8 +4,24 @@
 //  Run via: npm test
 // ============================================================
 
-import { handleRequest } from '../server.js';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { EventEmitter } from 'node:events';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// ── ISOLATE TEST DATABASE ────────────────────────────────────
+// Tests write to separate test-*.json files so demo data is NEVER wiped!
+const TEST_DB = path.join(__dirname, '../data/test-attendance.json');
+const TEST_COURSES = path.join(__dirname, '../data/test-courses.json');
+
+process.env.BUNKSMART_DB = TEST_DB;
+process.env.BUNKSMART_COURSES = TEST_COURSES;
+
+// Dynamically import server AFTER environment variables are set
+const { handleRequest } = await import('../server.js');
 
 class MockRequest extends EventEmitter {
   constructor(method, url, body = null) {
@@ -61,7 +77,7 @@ function testApi(method, path, body = null) {
       } catch {
         data = res.body;
       }
-      resolve({ status: res.statusCode, data, headers: res.headers });
+      resolve({ status: res.statusCode, headers: res.headers, data });
     });
 
     handleRequest(req, res);
@@ -91,8 +107,8 @@ async function runTests() {
 
     // ── Test 2: Courses API ──
     const courses = await testApi('GET', '/api/courses');
-    assert(courses.status === 200 && Array.isArray(courses.data.courses) && courses.data.courses.length === 6,
-      'GET /api/courses returns 6 real semester courses');
+    assert(courses.status === 200 && Array.isArray(courses.data.courses) && courses.data.courses.length >= 6,
+      'GET /api/courses returns semester courses');
 
     // ── Test 3: Input Validation - Missing courseId ──
     const noId = await testApi('POST', '/api/attendance/mark', { present: true });
@@ -150,6 +166,46 @@ async function runTests() {
     const notFound = await testApi('GET', '/api/non-existent-endpoint');
     assert(notFound.status === 404, 'Server returns 404 for non-existent API routes');
 
+    // ── Test 12: Rounding Threshold Check (Near 75% Detention Rule) ──
+    // 56/75 is 74.67%. It must NOT falsely report 'safe' (75%)
+    const thresholdUpdate = await testApi('POST', '/api/attendance/update', {
+      courseId: 'CS302',
+      attended: 56,
+      total: 75
+    });
+    assert(thresholdUpdate.status === 200 &&
+           thresholdUpdate.data.record.status === 'warning' &&
+           thresholdUpdate.data.record.percent === 74 &&
+           thresholdUpdate.data.record.classesNeeded === 1,
+      'Threshold check: 56/75 (74.67%) correctly reports "warning", percent 74, and 1 class needed');
+
+    // ── Test 13: Dynamic Course Addition (POST /api/courses) ──
+    const newCourse = {
+      id: 'CS499',
+      name: 'Advanced Machine Learning',
+      code: 'CS499',
+      instructor: 'Dr. Anita Desai',
+      credits: 4,
+      color: '#6366f1'
+    };
+    const addCourseRes = await testApi('POST', '/api/courses', newCourse);
+    assert(addCourseRes.status === 201 && addCourseRes.data.success && addCourseRes.data.course.id === 'CS499',
+      'POST /api/courses dynamically adds and validates new course');
+
+    // ── Test 14: Server Accepts Marks for Dynamically Added Course ──
+    const markNew = await testApi('POST', '/api/attendance/mark', { courseId: 'CS499', present: true });
+    assert(markNew.status === 200 && markNew.data.record.attended === 1,
+      'Server recognizes dynamically added course and updates attendance');
+
+    // ── Test 15: Reject Duplicate Course ID ──
+    const dupCourse = await testApi('POST', '/api/courses', newCourse);
+    assert(dupCourse.status === 409, 'Server rejects duplicate course ID with 409 Conflict');
+
+    // ── Test 16: Dynamic Course Deletion (DELETE /api/courses) ──
+    const delCourse = await testApi('DELETE', '/api/courses?id=CS499');
+    assert(delCourse.status === 200 && delCourse.data.success,
+      'DELETE /api/courses cleanly deletes course and associated record');
+
     console.log(`\n========================================`);
     console.log(`📊 Test Results: ${passed} Passed, ${failed} Failed`);
     console.log(`========================================\n`);
@@ -160,6 +216,14 @@ async function runTests() {
   } catch (err) {
     console.error('Unexpected test runner error:', err);
     process.exit(1);
+  } finally {
+    // Teardown temporary test files so production data is untouched
+    try {
+      if (fs.existsSync(TEST_DB)) fs.unlinkSync(TEST_DB);
+      if (fs.existsSync(TEST_COURSES)) fs.unlinkSync(TEST_COURSES);
+    } catch {
+      // Ignored
+    }
   }
 }
 

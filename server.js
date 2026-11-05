@@ -8,73 +8,123 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DEFAULT_COURSES, SEED_ATTENDANCE, VALID_COURSE_IDS } from './data/defaultData.js';
+import { DEFAULT_COURSES, SEED_ATTENDANCE } from './data/defaultData.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = process.env.PORT || 3000;
 const DATA_DIR = path.join(__dirname, 'data');
-const DB_FILE = path.join(DATA_DIR, 'attendance.json');
 
-// ── Ensure Data Directory & Database File Exist ─────────────
+function getDbFile() {
+  return process.env.BUNKSMART_DB || path.join(DATA_DIR, 'attendance.json');
+}
+
+function getCoursesFile() {
+  return process.env.BUNKSMART_COURSES || path.join(DATA_DIR, 'courses.json');
+}
+
+// ── Ensure Data Directory Exists ─────────────────────────────
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-function loadDatabase() {
+// ── Courses Storage ─────────────────────────────────────────
+function loadCourses() {
+  const filePath = getCoursesFile();
   try {
-    if (fs.existsSync(DB_FILE)) {
-      const raw = fs.readFileSync(DB_FILE, 'utf-8');
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, 'utf-8');
       const parsed = JSON.parse(raw);
-      // Ensure all valid courses are present
-      for (const id of VALID_COURSE_IDS) {
-        if (!parsed[id] || typeof parsed[id].attended !== 'number' || typeof parsed[id].total !== 'number') {
-          parsed[id] = { ...SEED_ATTENDANCE[id] };
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.warn('[Server] Error loading courses file, restoring defaults:', err.message);
+  }
+  const defaults = DEFAULT_COURSES.map(c => ({ ...c }));
+  saveCourses(defaults);
+  return defaults;
+}
+
+function saveCourses(courses) {
+  const filePath = getCoursesFile();
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(courses, null, 2), 'utf-8');
+    return true;
+  } catch (err) {
+    console.error('[Server] Failed to write courses to disk:', err.message);
+    return false;
+  }
+}
+
+// ── Attendance Database Storage ─────────────────────────────
+function loadDatabase() {
+  const filePath = getDbFile();
+  try {
+    if (fs.existsSync(filePath)) {
+      const raw = fs.readFileSync(filePath, 'utf-8');
+      const parsed = JSON.parse(raw);
+      // Ensure all current courses have attendance records
+      const currentCourses = loadCourses();
+      let missing = false;
+      for (const c of currentCourses) {
+        if (!parsed[c.id] || typeof parsed[c.id].attended !== 'number' || typeof parsed[c.id].total !== 'number') {
+          parsed[c.id] = SEED_ATTENDANCE[c.id] ? { ...SEED_ATTENDANCE[c.id] } : { attended: 0, total: 0 };
+          missing = true;
         }
       }
+      if (missing) saveDatabase(parsed);
       return parsed;
     }
   } catch (err) {
     console.warn('[Server] Error loading database file, restoring defaults:', err.message);
   }
   // Initialize with seed mid-semester progress
-  saveDatabase(SEED_ATTENDANCE);
-  return { ...SEED_ATTENDANCE };
+  const initial = { ...SEED_ATTENDANCE };
+  saveDatabase(initial);
+  return initial;
 }
 
 function saveDatabase(data) {
+  const filePath = getDbFile();
   try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf-8');
     return true;
   } catch (err) {
-    console.error('[Server] Failed to write to disk:', err.message);
+    console.error('[Server] Failed to write database to disk:', err.message);
     return false;
   }
 }
 
 let db = loadDatabase();
+let coursesList = loadCourses();
 
 // ── Business Logic Calculations ─────────────────────────────
 function calculateStats(attended, total, required = 75) {
-  const percent = total === 0 ? 0 : Math.round((attended / total) * 100);
+  const rawRatio = total === 0 ? 0 : attended / total;
+  const requiredRatio = required / 100;
+
+  // Use raw mathematical ratio for status to prevent near-threshold rounding errors
+  // E.g. 56/75 (74.67%) and 149/200 (74.5%) are strictly below 75% -> NOT safe!
   let status = 'danger';
-  if (percent >= required) status = 'safe';
-  else if (percent >= 60) status = 'warning';
+  if (rawRatio >= requiredRatio) {
+    status = 'safe';
+  } else if (rawRatio >= 0.6) {
+    status = 'warning';
+  }
 
-  // Safe skips: how many more classes can you miss while staying >= required?
-  // attended / (total + x) >= required / 100
-  // x <= (attended * 100 / required) - total
-  const safeSkips = Math.max(0, Math.floor((attended / (required / 100)) - total));
+  // Show percent floored so 74.67% displays as 74%, never misleadingly showing 75%
+  const percent = total === 0 ? 0 : Math.floor(rawRatio * 100);
 
-  // Classes needed: if below required, how many consecutive classes to attend to reach required?
-  // (attended + x) / (total + x) >= required / 100
-  // x >= (required*total - 100*attended) / (100 - required)
+  // Safe skips: attended / (total + x) >= requiredRatio  ->  x <= (attended / requiredRatio) - total
+  const safeSkips = total === 0 ? 0 : Math.max(0, Math.floor((attended / requiredRatio) - total));
+
+  // Classes needed: if below requiredRatio, how many consecutive classes to attend to reach target?
   let classesNeeded = 0;
-  if (percent < required) {
-    const numerator = (required * total) - (100 * attended);
-    const denominator = 100 - required;
-    classesNeeded = Math.max(0, Math.ceil(numerator / denominator));
+  if (rawRatio < requiredRatio) {
+    classesNeeded = Math.ceil((requiredRatio * total - attended) / (1 - requiredRatio));
   }
 
   return { attended, total, percent, status, safeSkips, classesNeeded };
@@ -86,8 +136,34 @@ function validateCourseId(courseId) {
     return 'Field "courseId" must be a string.';
   }
   const cleanId = courseId.trim().toUpperCase();
-  if (!VALID_COURSE_IDS.includes(cleanId)) {
-    return `Unknown courseId "${courseId}". Valid course IDs are: ${VALID_COURSE_IDS.join(', ')}`;
+  const validIds = coursesList.map(c => c.id.toUpperCase());
+  if (!validIds.includes(cleanId)) {
+    return `Unknown courseId "${courseId}". Valid course IDs are: ${validIds.join(', ')}`;
+  }
+  return null;
+}
+
+function validateCoursePayload(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return 'Course payload must be an object.';
+  }
+  if (typeof data.id !== 'string' || !/^[A-Z0-9-]{2,12}$/.test(data.id.trim().toUpperCase())) {
+    return 'Field "id" must be 2-12 uppercase alphanumeric characters or dashes.';
+  }
+  if (typeof data.name !== 'string' || !data.name.trim() || data.name.length > 80) {
+    return 'Field "name" must be a non-empty string under 80 characters.';
+  }
+  if (typeof data.code !== 'string' || !data.code.trim() || data.code.length > 16) {
+    return 'Field "code" must be a non-empty string under 16 characters.';
+  }
+  if (typeof data.instructor !== 'string' || !data.instructor.trim() || data.instructor.length > 80) {
+    return 'Field "instructor" must be a non-empty string under 80 characters.';
+  }
+  if (!Number.isInteger(data.credits) || data.credits < 1 || data.credits > 30) {
+    return 'Field "credits" must be an integer between 1 and 30.';
+  }
+  if (typeof data.color !== 'string' || !/^#[0-9a-f]{6}$/i.test(data.color)) {
+    return 'Field "color" must be a 6-digit hex color code (e.g. #a78bfa).';
   }
   return null;
 }
@@ -150,7 +226,7 @@ export async function handleRequest(req, res) {
   if (method === 'OPTIONS') {
     res.writeHead(204, {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type'
     });
     res.end();
@@ -172,12 +248,69 @@ export async function handleRequest(req, res) {
 
       // 2. Courses metadata list with combined stats
       if (pathname === '/api/courses' && method === 'GET') {
-        const enriched = DEFAULT_COURSES.map(course => {
+        const enriched = coursesList.map(course => {
           const rec = db[course.id] || { attended: 0, total: 0 };
           const stats = calculateStats(rec.attended, rec.total, course.requiredPercent);
           return { ...course, ...stats };
         });
         return sendJson(res, 200, { courses: enriched });
+      }
+
+      // 2b. Add a new course (Validated POST /api/courses)
+      if (pathname === '/api/courses' && method === 'POST') {
+        const body = await parseJsonBody(req);
+        const valErr = validateCoursePayload(body);
+        if (valErr) {
+          return sendJson(res, 400, { error: 'Validation Error', message: valErr });
+        }
+        const cleanId = body.id.trim().toUpperCase();
+        if (coursesList.some(c => c.id.toUpperCase() === cleanId)) {
+          return sendJson(res, 409, { error: 'Conflict', message: `Course "${cleanId}" already exists.` });
+        }
+        const newCourse = {
+          id: cleanId,
+          name: body.name.trim(),
+          code: body.code.trim().toUpperCase(),
+          instructor: body.instructor.trim(),
+          credits: body.credits,
+          color: body.color,
+          requiredPercent: 75
+        };
+        coursesList.push(newCourse);
+        saveCourses(coursesList);
+
+        if (!db[cleanId]) {
+          db[cleanId] = { attended: 0, total: 0 };
+          saveDatabase(db);
+        }
+
+        const stats = calculateStats(0, 0, newCourse.requiredPercent);
+        return sendJson(res, 201, {
+          success: true,
+          course: { ...newCourse, ...stats }
+        });
+      }
+
+      // 2c. Delete a course (DELETE /api/courses?id=...)
+      if (pathname === '/api/courses' && (method === 'DELETE' || method === 'POST') && (urlObj.searchParams.has('id') || req.headers['content-type']?.includes('json'))) {
+        let courseId = urlObj.searchParams.get('id');
+        if (!courseId) {
+          const body = await parseJsonBody(req);
+          courseId = body.courseId || body.id;
+        }
+        if (!courseId) {
+          return sendJson(res, 400, { error: 'Validation Error', message: 'Parameter "id" is required.' });
+        }
+        const cleanId = courseId.trim().toUpperCase();
+        const index = coursesList.findIndex(c => c.id.toUpperCase() === cleanId);
+        if (index < 0) {
+          return sendJson(res, 404, { error: 'Not Found', message: `Course "${cleanId}" not found.` });
+        }
+        coursesList.splice(index, 1);
+        saveCourses(coursesList);
+        delete db[cleanId];
+        saveDatabase(db);
+        return sendJson(res, 200, { success: true, message: `Course "${cleanId}" removed.` });
       }
 
       // 3. Complete attendance records
@@ -292,7 +425,7 @@ export async function handleRequest(req, res) {
             classesNeeded: afterSkip.classesNeeded
           },
           drop: currentStats.percent - afterSkip.percent,
-          verdict: afterSkip.percent >= 75 ? 'Safe to skip' : 'Danger: Do not skip'
+          verdict: afterSkip.status === 'safe' ? 'Safe to skip' : 'Danger: Do not skip'
         });
       }
 
@@ -300,6 +433,8 @@ export async function handleRequest(req, res) {
       if (pathname === '/api/attendance/reset' && method === 'POST') {
         db = { ...SEED_ATTENDANCE };
         saveDatabase(db);
+        coursesList = DEFAULT_COURSES.map(c => ({ ...c }));
+        saveCourses(coursesList);
         return sendJson(res, 200, {
           success: true,
           message: 'Database reset to semester seed data.',
@@ -363,10 +498,10 @@ export async function handleRequest(req, res) {
 
 export const server = http.createServer(handleRequest);
 
-// Run server if called directly
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
+// Auto-listen when run directly (node server.js)
+if (process.argv[1] && process.argv[1].endsWith('server.js')) {
   server.listen(PORT, () => {
-    console.log(`[BunkSmart Server] Running at http://localhost:${PORT}`);
-    console.log(`[BunkSmart Server] Serving fullstack app with strict input validation.`);
+    console.log(`🌸 BunkSmart Server running at http://localhost:${PORT}/`);
+    console.log(`   Strict input validation active. Survives refreshes.`);
   });
 }
