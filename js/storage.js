@@ -11,11 +11,10 @@ const PROFILE_KEY = "bunksmart_student_profile";
 
 export const SEED_RECORDS = {
   CS301: { attended: 18, total: 22 }, // 81.8% -> Safe (can skip 2)
-  CS302: { attended: 14, total: 20 }, // 70.0% -> Warning (needs 4 classes)
-  CS303: { attended: 10, total: 18 }, // 55.6% -> Danger (needs 14 classes)
-  CS304: { attended: 16, total: 20 }, // 80.0% -> Safe (can skip 1)
-  MA201: { attended: 12, total: 16 }, // 75.0% -> Safe on border (can skip 0)
-  CS305: { attended: 9,  total: 14 }, // 64.3% -> Warning (needs 6 classes)
+  DS365: { attended: 15, total: 20 }, // 75.0% -> Safe on border (can skip 0)
+  CS351: { attended: 14, total: 20 }, // 70.0% -> Warning (needs 4 classes)
+  DS304: { attended: 10, total: 18 }, // 55.6% -> Danger (needs 14 classes)
+  EC354: { attended: 16, total: 20 }, // 80.0% -> Safe (can skip 1)
 };
 
 // ── Student Profile Management ──────────────────────────────

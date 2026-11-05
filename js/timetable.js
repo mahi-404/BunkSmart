@@ -16,8 +16,8 @@ let   selectedDay = todayIdx >= 0 && todayIdx <= 4 ? todayIdx : 0;
 
 // Course emoji map
 const COURSE_EMOJI = {
-  CS301: "🧩", CS302: "🗃️", CS303: "⚙️",
-  CS304: "🌐", MA201: "📐", CS305: "🛠️",
+  CS301: "🧩", DS365: "💻", CS351: "🛠️",
+  DS304: "🤖", EC354: "⚡",
 };
 
 // Status emoji

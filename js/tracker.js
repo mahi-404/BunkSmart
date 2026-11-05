@@ -20,8 +20,8 @@ import { initDailyFlow, openDailyFlow } from "./dailyFlow.js";
 
 // ── Emoji map ──────────────────────────────────────────────────
 const EMOJI = {
-  CS301: "🧩", CS302: "🗃️", CS303: "⚙️",
-  CS304: "🌐", MA201: "📐", CS305: "🛠️",
+  CS301: "🧩", DS365: "💻", CS351: "🛠️",
+  DS304: "🤖", EC354: "⚡",
 };
 
 const STATUS_MSG = {

@@ -91,8 +91,8 @@ async function runTests() {
 
     // ── Test 2: Courses API ──
     const courses = await testApi('GET', '/api/courses');
-    assert(courses.status === 200 && Array.isArray(courses.data.courses) && courses.data.courses.length === 6,
-      'GET /api/courses returns 6 real semester courses');
+    assert(courses.status === 200 && Array.isArray(courses.data.courses) && courses.data.courses.length === 5,
+      'GET /api/courses returns 5 real semester courses');
 
     // ── Test 3: Input Validation - Missing courseId ──
     const noId = await testApi('POST', '/api/attendance/mark', { present: true });
@@ -116,7 +116,7 @@ async function runTests() {
 
     // ── Test 7: Logical Constraint - Attended > Total ──
     const impossibleAttendance = await testApi('POST', '/api/attendance/update', {
-      courseId: 'CS302',
+      courseId: 'CS301',
       attended: 25,
       total: 20
     });
@@ -125,7 +125,7 @@ async function runTests() {
 
     // ── Test 8: Input Validation - Negative Numbers ──
     const negativeNumbers = await testApi('POST', '/api/attendance/update', {
-      courseId: 'CS302',
+      courseId: 'CS301',
       attended: -5,
       total: 20
     });

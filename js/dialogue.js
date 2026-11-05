@@ -33,7 +33,7 @@ const ACTORS = {
   }
 };
 
-let currentCourseId = "CS302"; // default to DBMS (Warning state)
+let currentCourseId = "CS351"; // default to Software Design (Warning state)
 let typeInterval = null;
 
 // ── Typewriter Text Effect ──────────────────────────────────

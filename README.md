@@ -64,12 +64,11 @@ BunkSmart/
 ### Realistic Engineering Dataset (No AI Slop / Zero Placeholders)
 | Course Code | Course Name | Credits | Attended / Total | Initial % | Status | Safe Bunks Left | Recovery Path |
 |---|---|---|---|---|---|---|---|
-| **CS301** | Data Structures & Algorithms | 4 | 18 / 22 | 82% | `SAFE` | **2 bunks** | Above 75% target |
-| **CS302** | Database Management Systems | 3 | 14 / 20 | 70% | `WARNING` | 0 bunks | Need 4 classes to recover |
-| **CS303** | Operating Systems | 4 | 10 / 18 | 56% | `DANGER` | 0 bunks | Need 14 classes to recover |
-| **CS304** | Computer Networks | 3 | 16 / 20 | 80% | `SAFE` | **1 bunk** | Above 75% target |
-| **MA201** | Engineering Mathematics III | 4 | 12 / 16 | 75% | `SAFE` | **0 bunks** | Borderline (0 bunks) |
-| **CS305** | Software Engineering | 3 | 9 / 14 | 64% | `WARNING` | 0 bunks | Need 6 classes to recover |
+| **CS301** | Advanced Algorithms | 4 | 18 / 22 | 82% | `SAFE` | **2 bunks** | Above 75% target |
+| **DS365** | Full Stack Development | 3 | 15 / 20 | 75% | `SAFE` | **0 bunks** | Borderline (0 bunks) |
+| **CS351** | Software Design | 3 | 14 / 20 | 70% | `WARNING` | 0 bunks | Need 4 classes to recover |
+| **DS304** | Explainable AI | 3 | 10 / 18 | 56% | `DANGER` | 0 bunks | Need 14 classes to recover |
+| **EC354** | Tensor Multimodal | 3 | 16 / 20 | 80% | `SAFE` | **1 bunk** | Above 75% target |
 
 ### Strict Server Input Validation ("A Server That Checks Its Input")
 The Node.js backend server (`server.js`) uses zero external dependencies and enforces strict validation on all incoming data:

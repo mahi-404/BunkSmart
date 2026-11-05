@@ -45,7 +45,7 @@ const dangerSkips = calculateSafeSkips(10, 18, 75);
 assert.strictEqual(dangerSkips, 0, "In danger zone, safe skips must be 0");
 const recoveryNeeded = calculateClassesNeeded(10, 18, 75);
 assert.strictEqual(recoveryNeeded, 14, "Needs 14 consecutive classes to climb from 55.6% to 75%");
-console.log("  ✅ PASS: Recovery calculator accurately predicts 14 consecutive classes needed for 55.6% (CS303)");
+console.log("  ✅ PASS: Recovery calculator accurately predicts 14 consecutive classes needed for 55.6% (DS304)");
 
 // Test 4: Skip prediction drop
 const pred = calculatePredictSkip(14, 20, 1);
