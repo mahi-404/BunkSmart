@@ -1,44 +1,78 @@
-# 🌸 BunkSmart — Smart Attendance Forecasting & Timetable
+# 🎒 BunkSmart: Smart Attendance Forecasting & Timetable
 
-> **BunkSmart** is a cute, pastel-themed attendance forecasting web app designed for college students to track attendance, forecast the impact of bunking, and stay safely above the mandatory 75% university detention threshold.
+> A cute, pastel-themed web app that tells college students exactly how many classes they can safely skip, and how many they must attend to recover, so they never fall below the 75% detention threshold.
 
----
+## 📑 Table of Contents
 
-## 🎯 1. Problem Scope & Solution
-
-### The Problem
-Universities enforce a strict **75% minimum attendance rule**. Falling below 75% leads to **detention from semester examinations**, loss of credits, and academic year back. Students frequently struggle with:
-- "Can I afford to bunk this lecture today?"
-- Mental math is inaccurate and fails to project future percentage drops.
-- By the time students notice their attendance has slipped into danger (<60%), it is often mathematically impossible to recover before end-semester.
-
-### The BunkSmart Solution
-BunkSmart gives immediate mathematical certainty:
-- **`getSafeSkips(courseId)`**: Calculates exactly how many classes you can skip while remaining $\ge 75\%$.
-- **`predictSkip(courseId)`**: Simulates the exact attendance drop *before* you decide to bunk.
-- **`classesNeeded(courseId)`**: Calculates how many consecutive classes you must attend to climb out of the danger zone.
-- **Interactive Daily BunkSmart Flow (`dailyFlow.js`)**: Step-by-step morning check-in where Trace calculates safe skips and Prof. Maya shakes her head angrily if you try to bunk into the danger zone!
-- **Attendance Analytics & Trend Line**: Interactive Chart.js trend line with the mandatory 75% dashed reference threshold.
-- **Student Profile Isolation**: Profiles require a name and a roll number in the format `24BCS123`. Attendance, courses, and logs are stored separately per roll number in browser `localStorage`.
-- **Scheduled Attendance Tracking**: Classes are counted after their timetable end time; an unmarked class is recorded absent. Use the timetable to correct an ended class, and refreshes preserve all browser-saved records.
-- **Upcoming Class Plans**: Save or change an Attend/Skip plan on each upcoming timetable class. Plans are stored per student in browser storage and do not affect attendance totals.
-- **Undo Marking & CSV Export**: One-click accidental mark reversal and CSV report download.
-- **Interactive Character Stage**: The student's name appears in the attendance check-in and decision flow.
+1. [The Problem](#-the-problem)
+2. [The Solution](#-the-solution)
+3. [Features](#-features)
+4. [How the Math Works](#-how-the-math-works)
+5. [Project Structure](#-project-structure)
+6. [Sample Dataset](#-sample-dataset)
+7. [Server Input Validation](#-server-input-validation)
+8. [Getting Started](#-getting-started)
+9. [Testing](#-testing)
+10. [Data Storage Notes](#-data-storage-notes)
+11. [Team & Contributions](#-team--contributions)
+12. [Git Workflow](#-git-workflow)
 
 ---
 
-## 🛠️ 2. Project Architecture & Code Structure
+## 🎯 The Problem
 
-A modular web app built with vanilla HTML, CSS, ES modules, and a zero-dependency Node.js server. Student profiles and attendance are saved in browser storage and do not sync between browsers or devices.
+Universities enforce a strict **75% minimum attendance** rule. Falling below it can mean detention from semester exams, loss of credits, or even losing the academic year. Students commonly struggle with:
+
+- **"Can I afford to bunk this lecture today?"** has no quick, reliable answer.
+- **Mental math is inaccurate** and fails to project future percentage drops.
+- **Late discovery.** By the time attendance slips into the danger zone (below 60%), it is often mathematically impossible to recover before the end of the semester.
+
+## 💡 The Solution
+
+BunkSmart gives immediate mathematical certainty through three core functions:
+
+| Function | What it does |
+|---|---|
+| `getSafeSkips(courseId)` | Calculates exactly how many classes you can skip while staying at **≥ 75%** |
+| `predictSkip(courseId)` | Simulates the exact attendance drop *before* you decide to bunk |
+| `classesNeeded(courseId)` | Calculates how many consecutive classes you must attend to climb out of the danger zone |
+
+## ✨ Features
+
+- **Interactive Daily BunkSmart Flow** (`dailyFlow.js`): a step-by-step morning check-in where *Trace* calculates your safe skips, and *Prof. Maya* shakes her head angrily if you try to bunk into the danger zone.
+- **Attendance Analytics & Trend Line**: an interactive Chart.js trend line with the mandatory 75% dashed reference threshold.
+- **Student Profile Isolation**: profiles require a name and a roll number (format `24BCS123`). Attendance, courses, and logs are stored separately per roll number in browser `localStorage`.
+- **Scheduled Attendance Tracking**: classes are counted after their timetable end time, and an unmarked class is recorded as absent. Use the timetable to correct an ended class. Refreshes preserve all browser-saved records.
+- **Upcoming Class Plans**: save or change an *Attend / Skip* plan on each upcoming timetable class. Plans are stored per student in browser storage and **do not** affect attendance totals.
+- **Undo Marking & CSV Export**: one-click reversal of an accidental mark, plus a CSV report download.
+- **Interactive Character Stage**: the student's name appears in the attendance check-in and decision flow.
+- **Pre-class Smart Alerts & Live Clock**: notifications before class and a real-time navbar clock.
+
+## 🧮 How the Math Works
+
+Let `a` = classes attended, `t` = total classes held, and the threshold = 75%.
+
+| Question | Formula |
+|---|---|
+| Current attendance | `a / t` |
+| Safe skips | `floor(a / 0.75 − t)` (never below 0) |
+| Attendance if you skip the next class | `a / (t + 1)` |
+| Consecutive classes needed to recover | `ceil(3t − 4a)` (0 if already ≥ 75%) |
+
+**Example:** DS304 (Explainable AI) at 10/18 needs `3×18 − 4×10 = 14` consecutive classes to get back to 75%.
+
+## 🛠️ Project Structure
+
+Built with vanilla HTML, CSS, ES modules, and a zero-dependency Node.js server.
 
 ```
 BunkSmart/
 ├── server.js               # Node.js backend server with strict input validation
 ├── package.json            # Start & test scripts ("npm start", "npm test")
-├── index.html              # Home & Interactive Character Dialogue Stage
-├── timetable.html          # 5-Day Timetable Grid & Schedule View
-├── tracker.html            # Attendance Cards, Progress Rings & Bunk Simulator
-├── dashboard.html          # Overview Analytics & Chart.js Doughnut Chart
+├── index.html              # Home & interactive character dialogue stage
+├── timetable.html          # 5-day timetable grid & schedule view
+├── tracker.html            # Attendance cards, progress rings & bunk simulator
+├── dashboard.html          # Overview analytics & Chart.js doughnut chart
 ├── css/
 │   ├── variables.css       # Solid pastel design tokens & theme variables (no gradients)
 │   ├── base.css            # Shared UI kit (buttons, navbar, badges, cards, progress bars)
@@ -52,7 +86,7 @@ BunkSmart/
 │   └── defaultData.js      # Realistic B.Tech mid-semester seed data
 ├── js/
 │   ├── data.js             # Course list & weekly timetable schedule
-│   ├── logic.js            # Core attendance calculation formulas (The Brain)
+│   ├── logic.js            # Core attendance calculation formulas (the brain)
 │   ├── storage.js          # Browser-local profile and attendance persistence
 │   ├── dialogue.js         # Typewriter dialogue stage & character animations
 │   ├── timetable.js        # Timetable renderer & day schedule controller
@@ -61,87 +95,87 @@ BunkSmart/
 │   ├── clock.js            # Real-time navbar live clock
 │   └── notify.js           # Pre-class smart alerts & notifications
 └── test/
-    ├── server.test.js      # Server API tests
-    └── attendance-local.test.js # Browser storage and profile isolation tests
+    ├── server.test.js            # Server API tests
+    └── attendance-local.test.js  # Browser storage & profile isolation tests
 ```
 
-### Realistic Engineering Dataset
+## 📊 Sample Dataset
+
+BunkSmart ships with realistic B.Tech mid-semester seed data:
+
 | Course Code | Course Name | Credits | Attended / Total | Initial % | Status | Safe Bunks Left | Recovery Path |
-|---|---|---|---|---|---|---|---|
-| **CS301** | Advanced Algorithms | 4 | 18 / 22 | 82% | `SAFE` | **2 bunks** | Above 75% target |
-| **DS365** | Full Stack Development | 3 | 15 / 20 | 75% | `SAFE` | **0 bunks** | Borderline (0 bunks) |
-| **CS351** | Software Design | 3 | 14 / 20 | 70% | `WARNING` | 0 bunks | Need 4 classes to recover |
-| **DS304** | Explainable AI | 3 | 10 / 18 | 56% | `DANGER` | 0 bunks | Need 14 classes to recover |
-| **EC354** | Tensor Multimodal | 3 | 16 / 20 | 80% | `SAFE` | **1 bunk** | Above 75% target |
+|---|---|:-:|:-:|:-:|:-:|:-:|---|
+| CS301 | Advanced Algorithms | 4 | 18 / 22 | 82% | 🟢 SAFE | 2 | Above 75% target |
+| DS365 | Full Stack Development | 3 | 15 / 20 | 75% | 🟢 SAFE | 0 | Borderline (0 bunks) |
+| CS351 | Software Design | 3 | 14 / 20 | 70% | 🟡 WARNING | 0 | Need 4 classes to recover |
+| DS304 | Explainable AI | 3 | 10 / 18 | 56% | 🔴 DANGER | 0 | Need 14 classes to recover |
+| EC354 | Tensor Multimodal | 3 | 16 / 20 | 80% | 🟢 SAFE | 1 | Above 75% target |
 
+## 🔒 Server Input Validation
 
-### Strict Server Input Validation
-The Node.js backend server (`server.js`) uses zero external dependencies and enforces strict validation on all incoming data:
-1. **JSON Syntax Integrity**: Rejects malformed JSON with `400 Bad Request`.
-2. **Whitelisted Course IDs**: Rejects unknown course IDs (e.g. `INVALID_999`) with `400 Bad Request: Unknown courseId`.
-3. **Dynamic Course Support**: Accepts validated `POST /api/courses` and `DELETE /api/courses` to dynamically add/remove courses across both frontend and server.
-4. **Type Strictness**: Enforces that `present` is strictly a boolean (`true`/`false`), rejecting strings like `"yes"` or numbers.
-5. **Logical Bounds**: Rejects invalid values like `attended > total` (e.g. 25/20) or negative numbers with `400 Logical Constraint Error`.
-6. **Path Traversal Protection**: Sanitizes file paths to prevent directory traversal.
+The Node.js backend (`server.js`) uses **zero external dependencies** and strictly validates all incoming data:
 
----
+| Check | Behavior |
+|---|---|
+| **JSON syntax integrity** | Malformed JSON is rejected with `400 Bad Request` |
+| **Whitelisted course IDs** | Unknown IDs (e.g. `INVALID_999`) are rejected with `400 Bad Request: Unknown courseId` |
+| **Dynamic course support** | Validated `POST /api/courses` and `DELETE /api/courses` add or remove courses across frontend and server |
+| **Type strictness** | `present` must be a real boolean; strings like `"yes"` or numbers are rejected |
+| **Logical bounds** | `attended > total` (e.g. 25/20) or negative numbers return `400 Logical Constraint Error` |
+| **Duplicate protection** | Duplicate course IDs return `409 Conflict` |
+| **Path traversal protection** | File paths are sanitized to prevent directory traversal |
 
-## 🚀 3. Quick Start & Test Suite
+## 🚀 Getting Started
 
-### Running the Server
+### Prerequisites
+
+- [Node.js](https://nodejs.org/) (no other dependencies required)
+
+### Run locally
+
 ```bash
+# 1. Clone the repository
+git clone https://github.com/mahi-404/BunkSmart.git
+cd BunkSmart
+
+# 2. Start the server
 npm start
 ```
-Open **http://localhost:3000** in your browser.
 
-Enter your name and roll number (two year digits, `B`, `CS`, `DS`, or `EC`, then three digits; for example, `24BCS123`). Your attendance and profile are saved per roll number in this browser's `localStorage`, so they survive refreshes. Clearing browser site data or using a different browser/device removes or does not carry over those records.
+Then open **http://localhost:3000** in your browser.
 
-### Running the Test Suite
+### First-time login
+
+Enter your **name** and **roll number**. The roll number format is:
+
+```
+<2 year digits> + B + <CS | DS | EC> + <3 digits>
+e.g.  24BCS123
+```
+
+Your profile and attendance are saved per roll number in this browser's `localStorage`, so they survive refreshes.
+
+## 🧪 Testing
+
 ```bash
 npm test
 ```
-The test suite isolates test data to temporary files via `BUNKSMART_DB` so live database records are never wiped or corrupted.
 
-**Test Results**:
-```
-🧪 Running BunkSmart Server Input Validation & Integration Tests...
+The test suite isolates its data in temporary files via the `BUNKSMART_DB` environment variable, so live database records are never wiped or corrupted.
 
-  ✅ PASS: GET /api/health returns 200 with status ok
-  ✅ PASS: GET /api/courses returns semester courses
-  ✅ PASS: Server rejects missing courseId with 400 Bad Request
-  ✅ PASS: Server rejects invalid/spoofed courseId with 400 Bad Request
-  ✅ PASS: Server rejects non-boolean present ("yes") with 400 Bad Request
-  ✅ PASS: Server rejects malformed JSON payload with 400 Bad Request
-  ✅ PASS: Server rejects attended > total with 400 Logical Constraint Error
-  ✅ PASS: Server rejects negative attendance values with 400 Validation Error
-  ✅ PASS: Valid markAttendance updates attended count and recalculates percent
-  ✅ PASS: Predict skip calculates drop and returns safety verdict
-  ✅ PASS: Server returns 404 for non-existent API routes
-  ✅ PASS: Threshold check: 56/75 (74.67%) correctly reports "warning", percent 74, and 1 class needed
-  ✅ PASS: POST /api/courses dynamically adds and validates new course
-  ✅ PASS: Server recognizes dynamically added course and updates attendance
-  ✅ PASS: Server rejects duplicate course ID with 409 Conflict
-  ✅ PASS: DELETE /api/courses cleanly deletes course and associated record
+**Coverage includes:**
 
-========================================
-📊 Test Results: 16 Passed, 0 Failed
-========================================
+- **Server API:** health check, course listing, missing/spoofed `courseId`, non-boolean `present`, malformed JSON, `attended > total`, negative values, valid attendance updates, skip prediction, unknown routes (404), dynamic course add/delete, and duplicate course rejection (409).
+- **Logic precision:** exact 75% boundary yields 0 safe skips, 80% (16/20) yields 1 safe skip, recovery calculation for low-attendance courses, and skip-prediction drop with unsafe verdict.
+- **Browser storage:** profile isolation between roll numbers.
 
-🧪 Running BunkSmart Logic Mathematical Precision Tests...
+## 💾 Data Storage Notes
 
-  ✅ PASS: Exact 75% boundary yields 0 safe skips (cannot skip without dropping below 75%)
-  ✅ PASS: 80% attendance (16/20) correctly calculates 1 safe skip
-  ✅ PASS: Recovery calculator accurately predicts 14 consecutive classes needed for 55.6% (CS303)
-  ✅ PASS: Skip prediction accurately calculates drop from 70% to 67% and marks unsafe
+- Student profiles and attendance live in **browser storage** (`localStorage`).
+- Data **does not sync** between browsers or devices.
+- Clearing browser site data removes saved records.
 
-========================================
-📊 Total Tests: 15 Passed, 0 Failed
-========================================
-```
-
----
-
-## 👥 4. Team Roles & Git Workflow
+## 👥 Team & Contributions
 
 | Member | Role | Files Owned | Responsibilities |
 |---|---|---|---|
@@ -149,6 +183,15 @@ The test suite isolates test data to temporary files via `BUNKSMART_DB` so live 
 | **Mahitha** | Person 2 | `server.js`, `test/server.test.js`, `js/logic.js`, `js/dialogue.js`, `index.html` | Backend server & input validation, automated test suite, core attendance math, dialogue engine |
 | **Swetha** | Person 3 | `timetable.html`, `dashboard.html`, `js/timetable.js`, `js/dashboard.js`, `js/clock.js`, `js/notify.js` | Weekly timetable grid, live clock, pre-class alerts, Chart.js dashboard |
 
-### Git Workflow Rules
-- `main`: Production-ready, verified release.
-- Feature branches merged through Pull Requests (`feature/characters`, `feature/logic`, `feature/timetable-dashboard`, `feature/attendance-storyline`).
+## 🌿 Git Workflow
+
+- `main`: production-ready, verified release.
+- Feature branches merged through Pull Requests:
+  - `feature/characters`
+  - `feature/logic`
+  - `feature/timetable-dashboard`
+  - `feature/attendance-storyline`
+
+---
+
+<p align="center">Made with 💖 and a healthy fear of the 75% rule.</p>
