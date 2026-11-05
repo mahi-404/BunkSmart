@@ -17,6 +17,10 @@ BunkSmart gives immediate mathematical certainty:
 - **`getSafeSkips(courseId)`**: Calculates exactly how many classes you can skip while remaining $\ge 75\%$.
 - **`predictSkip(courseId)`**: Simulates the exact attendance drop *before* you decide to bunk.
 - **`classesNeeded(courseId)`**: Calculates how many consecutive classes you must attend to climb out of the danger zone.
+- **Interactive Daily BunkSmart Flow (`dailyFlow.js`)**: Step-by-step morning check-in where Trace calculates safe skips and Prof. Maya shakes her head angrily if you try to bunk into the danger zone!
+- **Attendance Analytics & Trend Line**: Interactive Chart.js trend line with the mandatory 75% dashed reference threshold.
+- **Student Profile Isolation**: Independent attendance records, subjects, and logs scoped by Roll Number.
+- **Undo Marking & CSV Export**: One-click accidental mark reversal and CSV report download.
 - **Interactive Character Stage**: Alex (Student), Trace (AI Tracker), and Prof. Maya (Faculty) react to your attendance choices in real time.
 
 ---
@@ -134,6 +138,17 @@ npm test
 
 ========================================
 📊 Test Results: 11 Passed, 0 Failed
+========================================
+
+🧪 Running BunkSmart Logic Mathematical Precision Tests...
+
+  ✅ PASS: Exact 75% boundary yields 0 safe skips (cannot skip without dropping below 75%)
+  ✅ PASS: 80% attendance (16/20) correctly calculates 1 safe skip
+  ✅ PASS: Recovery calculator accurately predicts 14 consecutive classes needed for 55.6% (CS303)
+  ✅ PASS: Skip prediction accurately calculates drop from 70% to 67% and marks unsafe
+
+========================================
+📊 Total Tests: 15 Passed, 0 Failed
 ========================================
 ```
 

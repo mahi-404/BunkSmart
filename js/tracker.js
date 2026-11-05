@@ -9,12 +9,14 @@ import {
 } from "./data.js";
 import {
   getAttendance, getStatus, getSafeSkips, predictSkip,
-  markAttendance, classesNeeded, syncState
+  markAttendance, classesNeeded, syncState, undoAttendance
 } from "./logic.js";
 import {
   clearAll as clearStorage, loadAttendanceLog, saveAttendanceLog,
+  getStudentProfile, exportAttendanceCSV
 } from "./storage.js";
 import { startClock } from "./clock.js";
+import { initDailyFlow, openDailyFlow } from "./dailyFlow.js";
 
 // ── Emoji map ──────────────────────────────────────────────────
 const EMOJI = {
@@ -35,6 +37,23 @@ let editingCourseId = null;
 // ── Boot ───────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
   startClock("navbar-clock");
+
+  // Load student profile
+  const profile = getStudentProfile();
+  const nameEl = document.getElementById("student-name-display");
+  const rollEl = document.getElementById("student-roll-display");
+  if (profile) {
+    if (nameEl) nameEl.textContent = profile.name;
+    if (rollEl) rollEl.textContent = profile.rollNumber;
+  }
+
+  // Initialize Daily Flow
+  initDailyFlow(async () => {
+    showToast("Today's Plan Saved! ✨", "Attendance updated successfully.", "safe");
+    await syncState();
+    refreshAll();
+  });
+
   try {
     logEntries.push(...loadAttendanceLog());
     renderLog();
@@ -64,6 +83,15 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 });
+
+function refreshAll() {
+  logEntries.length = 0;
+  logEntries.push(...loadAttendanceLog());
+  renderSummary();
+  renderCards();
+  renderStory();
+  renderLog();
+}
 
 // ── Summary bar ────────────────────────────────────────────────
 function renderSummary() {
@@ -125,9 +153,10 @@ function buildCard(course) {
 
   const msgs = STATUS_MSG[status];
   const funMsg = msgs[Math.floor(Math.random() * msgs.length)];
+  const isDanger = status === "danger";
 
   return `
-    <div class="course-card" id="card-${course.id}" style="--card-color:${course.color}">
+    <div class="course-card ${isDanger ? 'danger-card' : ''}" id="card-${course.id}" style="--card-color:${course.color}">
 
       <div class="cc-header">
         <div class="cc-header-left">
@@ -136,6 +165,7 @@ function buildCard(course) {
           <div class="cc-meta">
             <span>🏷 ${escapeHtml(course.code)}</span>
             <span>💎 ${course.credits} Credits</span>
+            ${isDanger ? '<span class="danger-tag">🚨 DANGER ZONE</span>' : ''}
           </div>
           <div style="font-size:var(--fs-xs);color:var(--clr-text-muted);margin-top:var(--space-1)">
             👤 ${escapeHtml(course.instructor)}
@@ -525,6 +555,28 @@ window.removeCourse = function(courseId) {
     showToast("Course deleted", `${course.code} and its attendance record were removed.`, "info");
   } catch (error) {
     showToast("Course changes need attention", error.message, "danger");
+  }
+};
+
+// ── Daily Flow, Undo & CSV Export ──────────────────────────────
+window.startDailyPlan = () => openDailyFlow();
+
+window.undoMark = function() {
+  try {
+    const res = undoAttendance();
+    showToast("Action Undone! ↩", `Reverted ${res.undoneEntry.present ? "Present" : "Absent"} mark for ${res.undoneEntry.name}`, "info");
+    refreshAll();
+  } catch (err) {
+    showToast("Cannot Undo", err.message, "danger");
+  }
+};
+
+window.exportCSV = function() {
+  try {
+    exportAttendanceCSV(COURSES);
+    showToast("Downloaded! 📥", "Attendance CSV downloaded successfully.", "safe");
+  } catch (err) {
+    showToast("Export Failed", err.message, "danger");
   }
 };
 

@@ -371,3 +371,70 @@
   .hero-actions { flex-direction: column; }
   .chars-grid { grid-template-columns: 1fr; }
 }
+
+
+/* ==============================
+   STUDENT LOGIN FORM
+============================== */
+
+#student-login-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+  max-width: 700px;
+}
+
+#student-login-form input {
+  flex: 1;
+  min-width: 180px;
+  padding: 14px 16px;
+  border: 1px solid #dfd2ff;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #38206f;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+#student-login-form input::placeholder {
+  color: #a49ab9;
+}
+
+#student-login-form input:focus {
+  border-color: #a78bfa;
+  box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15);
+}
+
+#student-login-form button {
+  padding: 14px 24px;
+  border: none;
+  border-radius: 30px;
+  background: #a78bfa;
+  color: white;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+#student-login-form button:hover {
+  background: #9370e8;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 600px) {
+  #student-login-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  #student-login-form input,
+  #student-login-form button {
+    width: 100%;
+  }
+}

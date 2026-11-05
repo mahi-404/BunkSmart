@@ -6,6 +6,7 @@
 
 import { COURSES, getCourse } from "./data.js";
 import { getAttendance, getStatus, getSafeSkips, predictSkip, markAttendance, classesNeeded, syncState } from "./logic.js";
+import { getStudentProfile } from "./storage.js";
 
 // Characters
 const ACTORS = {
@@ -99,6 +100,9 @@ export function playScenario(courseId) {
   const actionsEl = document.getElementById("dialogue-actions");
   if (actionsEl) actionsEl.innerHTML = ""; // clear old choices
 
+  const profile = getStudentProfile();
+  const studentName = profile?.name || "Alex";
+
   // Step 1: Student speaks
   setSpeaker("student", "anim-idle");
   const studentLine = `Should I attend ${course.code} (${course.name}) today? I have ${attended}/${total} classes so far (${percent}%).`;
@@ -123,15 +127,17 @@ export function playScenario(courseId) {
         // Step 3: Instructor responds
         setTimeout(() => {
           let instructorLine = "";
+          let instructorAnim = "anim-idle";
           if (status === "safe") {
-            instructorLine = `Good consistency so far, Alex. Keep attending so you don't fall behind on upcoming lab assignments.`;
+            instructorLine = `Good consistency so far, ${studentName}. Keep attending so you don't fall behind on upcoming lab assignments.`;
           } else if (status === "warning") {
-            instructorLine = `Alex, your attendance has been slipping lately. Do not miss today's lecture.`;
+            instructorLine = `${studentName}, your attendance has been slipping lately. Do not miss today's lecture.`;
           } else {
-            instructorLine = `Unacceptable attendance record! One more unexcused absence and I will escalate this to the Academic Dean.`;
+            instructorLine = `Unacceptable attendance record, ${studentName}! Attendance is at ${percent}%. One more unexcused absence and I will escalate this to the Academic Dean! 😠`;
+            instructorAnim = "anim-angry";
           }
 
-          setSpeaker("instructor", "anim-idle");
+          setSpeaker("instructor", instructorAnim);
           typeWriter(instructorLine, () => {
             renderDecisionButtons(courseId, status);
           });

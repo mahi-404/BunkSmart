@@ -1,12 +1,13 @@
 // ============================================================
-//  storage.js – Persistence, LocalStorage & Server Sync
-//  Person 2 owns this file.
-//  Handles local storage caching, course management & API sync.
+//  storage.js – Persistence, LocalStorage, Profiles & Server Sync
+//  Handles student profile isolation, local storage caching,
+//  undo history, and server synchronization.
 // ============================================================
 
-const KEY = "bunksmart_records"; // { [courseId]: { attended, total } }
-const COURSES_KEY = "bunksmart_courses";
-const LOG_KEY = "bunksmart_attendance_log";
+const BASE_KEY = "bunksmart_records";
+const BASE_COURSES_KEY = "bunksmart_courses";
+const BASE_LOG_KEY = "bunksmart_attendance_log";
+const PROFILE_KEY = "bunksmart_student_profile";
 
 export const SEED_RECORDS = {
   CS301: { attended: 18, total: 22 }, // 81.8% -> Safe (can skip 2)
@@ -17,8 +18,64 @@ export const SEED_RECORDS = {
   CS305: { attended: 9,  total: 14 }, // 64.3% -> Warning (needs 6 classes)
 };
 
+// ── Student Profile Management ──────────────────────────────
+export function getStudentProfile() {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    if (!raw) return null;
+    const profile = JSON.parse(raw);
+    if (profile && typeof profile === "object" && profile.name && profile.rollNumber) {
+      return profile;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function saveStudentProfile(profile) {
+  if (!profile || typeof profile !== "object") {
+    throw new TypeError("Profile must be an object.");
+  }
+  const name = String(profile.name || "").trim();
+  const rollNumber = String(profile.rollNumber || "").trim().toUpperCase();
+
+  if (!name || !rollNumber) {
+    throw new Error("Both name and roll number are required.");
+  }
+
+  const clean = {
+    name,
+    rollNumber,
+    updatedAt: new Date().toISOString()
+  };
+
+  localStorage.setItem(PROFILE_KEY, JSON.stringify(clean));
+
+  // If this student does not have records yet, initialize them with SEED_RECORDS
+  const studentKey = getScopedKey(BASE_KEY, rollNumber);
+  if (!localStorage.getItem(studentKey)) {
+    localStorage.setItem(studentKey, JSON.stringify(SEED_RECORDS));
+  }
+
+  return clean;
+}
+
+export function clearStudentProfile() {
+  localStorage.removeItem(PROFILE_KEY);
+}
+
+// Helper to scope storage keys by roll number for student data isolation
+function getScopedKey(base, specificRoll = null) {
+  const roll = specificRoll || getStudentProfile()?.rollNumber;
+  return roll ? `${base}_${roll.replace(/[^A-Z0-9_-]/gi, "_")}` : base;
+}
+
+// ── Attendance Records ──────────────────────────────────────
 export function loadRecords() {
-  const stored = localStorage.getItem(KEY) || localStorage.getItem("attendai_records");
+  const key = getScopedKey(BASE_KEY);
+  const stored = localStorage.getItem(key) || localStorage.getItem(BASE_KEY) || localStorage.getItem("attendai_records");
+
   if (!stored) {
     saveRecords(SEED_RECORDS);
     return { ...SEED_RECORDS };
@@ -38,42 +95,43 @@ export function loadRecords() {
 
 export function saveRecords(records) {
   try {
-    localStorage.setItem(KEY, JSON.stringify(records));
+    const key = getScopedKey(BASE_KEY);
+    localStorage.setItem(key, JSON.stringify(records));
   } catch (err) {
-    console.error("[Storage] Failed to save to localStorage:", err);
+    console.error("[Storage] Failed to save records to localStorage:", err);
   }
 }
 
+// ── Courses ─────────────────────────────────────────────────
 export function loadCourses(defaultCourses) {
-  const stored = localStorage.getItem(COURSES_KEY);
+  const key = getScopedKey(BASE_COURSES_KEY);
+  const stored = localStorage.getItem(key) || localStorage.getItem(BASE_COURSES_KEY);
   return stored ? JSON.parse(stored) : defaultCourses.map(course => ({ ...course }));
 }
 
 export function saveCourses(courses) {
-  localStorage.setItem(COURSES_KEY, JSON.stringify(courses));
+  const key = getScopedKey(BASE_COURSES_KEY);
+  localStorage.setItem(key, JSON.stringify(courses));
 }
 
+// ── Attendance Log & History ────────────────────────────────
 export function loadAttendanceLog() {
-  const stored = localStorage.getItem(LOG_KEY);
+  const key = getScopedKey(BASE_LOG_KEY);
+  const stored = localStorage.getItem(key) || localStorage.getItem(BASE_LOG_KEY);
   if (!stored) return [];
 
   try {
     const entries = JSON.parse(stored);
-    if (!Array.isArray(entries) || entries.some(entry =>
-      !entry || typeof entry.courseId !== "string" ||
-      typeof entry.name !== "string" || typeof entry.present !== "boolean" ||
-      !Number.isInteger(entry.percent) || typeof entry.timestamp !== "string"
-    )) {
-      return [];
-    }
-    return entries.slice(0, 30);
+    if (!Array.isArray(entries)) return [];
+    return entries.slice(0, 50);
   } catch {
     return [];
   }
 }
 
 export function saveAttendanceLog(entries) {
-  localStorage.setItem(LOG_KEY, JSON.stringify(entries));
+  const key = getScopedKey(BASE_LOG_KEY);
+  localStorage.setItem(key, JSON.stringify(entries));
 }
 
 export function getRecord(courseId) {
@@ -102,13 +160,76 @@ export function removeRecord(courseId) {
   saveRecords(records);
 }
 
+// ── Undo Last Attendance Mark ───────────────────────────────
+export function undoLastAttendanceMark() {
+  const log = loadAttendanceLog();
+  if (!log.length) {
+    throw new Error("No recent attendance actions to undo.");
+  }
+
+  const lastEntry = log.shift(); // remove most recent
+  const { courseId, present } = lastEntry;
+
+  const records = loadRecords();
+  const current = records[courseId] || { attended: 0, total: 0 };
+
+  const newAttended = present ? Math.max(0, current.attended - 1) : current.attended;
+  const newTotal = Math.max(0, current.total - 1);
+
+  records[courseId] = {
+    attended: Math.min(newAttended, newTotal),
+    total: newTotal
+  };
+
+  saveRecords(records);
+  saveAttendanceLog(log);
+
+  return {
+    success: true,
+    undoneEntry: lastEntry,
+    updatedRecord: records[courseId]
+  };
+}
+
+// ── Export to CSV ───────────────────────────────────────────
+export function exportAttendanceCSV(courses) {
+  const profile = getStudentProfile();
+  const records = loadRecords();
+  const lines = [
+    `BunkSmart Attendance Report`,
+    `Student: ${profile ? profile.name : "Guest"}`,
+    `Roll Number: ${profile ? profile.rollNumber : "N/A"}`,
+    `Generated: ${new Date().toLocaleString()}`,
+    ``,
+    `Course Code,Course Name,Instructor,Attended,Total,Percentage,Status,Safe Skips Left`
+  ];
+
+  for (const c of courses) {
+    const rec = records[c.id] || { attended: 0, total: 0 };
+    const pct = rec.total === 0 ? 0 : Math.round((rec.attended / rec.total) * 100);
+    const status = pct >= 75 ? "SAFE" : pct >= 60 ? "WARNING" : "DANGER";
+    const skips = rec.total === 0 ? 0 : Math.max(0, Math.floor((rec.attended / 0.75) - rec.total));
+    lines.push(`"${c.code}","${c.name}","${c.instructor}",${rec.attended},${rec.total},${pct}%,${status},${skips}`);
+  }
+
+  const csvContent = "data:text/csv;charset=utf-8," + lines.map(e => e).join("\n");
+  const encodedUri = encodeURI(csvContent);
+  const link = document.createElement("a");
+  link.setAttribute("href", encodedUri);
+  link.setAttribute("download", `BunkSmart_Attendance_${profile ? profile.rollNumber : "Export"}.csv`);
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
 export function clearAll() {
-  localStorage.removeItem(KEY);
-  localStorage.removeItem(LOG_KEY);
+  const key = getScopedKey(BASE_KEY);
+  const logKey = getScopedKey(BASE_LOG_KEY);
+  localStorage.removeItem(key);
+  localStorage.removeItem(logKey);
 }
 
 // ── Backend Server Synchronization ──────────────────────────
-
 export async function syncFromServer() {
   try {
     const res = await fetch("/api/attendance", {

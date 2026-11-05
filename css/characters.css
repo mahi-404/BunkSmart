@@ -165,10 +165,20 @@
 
 @keyframes angryShake {
   0%, 100% { transform: translateX(0) rotate(0deg); }
-  20% { transform: translateX(-8px) rotate(-4deg); }
-  40% { transform: translateX(8px) rotate(4deg); }
-  60% { transform: translateX(-6px) rotate(-2deg); }
-  80% { transform: translateX(6px) rotate(2deg); }
+  15% { transform: translateX(-9px) rotate(-6deg); }
+  30% { transform: translateX(9px) rotate(6deg); }
+  45% { transform: translateX(-7px) rotate(-4deg); }
+  60% { transform: translateX(7px) rotate(4deg); }
+  75% { transform: translateX(-4px) rotate(-2deg); }
+  90% { transform: translateX(4px) rotate(2deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0) rotate(0); }
+  20% { transform: translateX(-8px) rotate(-5deg); }
+  40% { transform: translateX(8px) rotate(5deg); }
+  60% { transform: translateX(-6px) rotate(-3deg); }
+  80% { transform: translateX(6px) rotate(3deg); }
 }
 
 .anim-idle {
@@ -183,9 +193,139 @@
   animation: actorExit 0.35s ease both;
 }
 
-.anim-angry {
-  animation: angryShake 0.5s ease-in-out infinite !important;
-  border-color: var(--clr-danger) !important;
+.anim-angry,
+.shaking {
+  animation: angryShake 0.45s ease-in-out infinite !important;
+}
+
+.actor-angry,
+.angry {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25), 0 8px 24px rgba(239, 68, 68, 0.35) !important;
+  background: #fef2f2 !important;
+}
+
+/* ── Daily BunkSmart Flow Modal ──────────────────────────── */
+.daily-flow-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 16, 60, 0.65);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.daily-flow-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.daily-flow-card {
+  background: #ffffff;
+  border-radius: 28px;
+  width: 100%;
+  max-width: 580px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 60px -15px rgba(67, 24, 122, 0.35);
+  border: 1.5px solid #dfd2ff;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  animation: modalPop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalPop {
+  0% { transform: scale(0.92) translateY(20px); opacity: 0; }
+  100% { transform: scale(1) translateY(0); opacity: 1; }
+}
+
+.daily-flow-header {
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid #f0eaff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #faf7ff 0%, #f3ecff 100%);
+  border-radius: 28px 28px 0 0;
+}
+
+.daily-flow-body {
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.daily-flow-footer {
+  padding: 16px 28px 24px;
+  border-top: 1px solid #f0eaff;
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  background: #faf8ff;
+  border-radius: 0 0 28px 28px;
+}
+
+.daily-class-card {
+  background: #ffffff;
+  border: 1.5px solid #e9d5ff;
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(167, 139, 250, 0.08);
+  transition: transform 0.2s ease;
+}
+
+.daily-characters-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #faf7ff;
+  border: 1px solid #e9d5ff;
+  border-radius: 20px;
+  padding: 16px;
+  margin-top: 12px;
+}
+
+.daily-char-avatar {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #d8b4fe;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.daily-speech-bubble {
+  background: #ffffff;
+  border: 1px solid #e2d4fe;
+  border-radius: 16px;
+  padding: 12px 16px;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #3b1f6e;
+  position: relative;
+  flex: 1;
+}
+
+.daily-speech-bubble::before {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 24px;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 8px solid #ffffff;
 }
 
 /* ── Conversation Speech Bubble Display ───────────────────── */

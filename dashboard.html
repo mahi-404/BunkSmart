@@ -42,16 +42,17 @@
 
 <!-- ══════════════════════════ HEADER ══════════════════════════ -->
 <header class="dash-header">
-  <div class="container" style="position:relative;z-index:1">
-    <div class="header-eyebrow" style="color:var(--clr-accent)">📊 Overview</div>
-    <h1 class="page-header__title">
-      Your Dashboard
-    </h1>
-    <p class="page-header__subtitle">Every subject. One bird's-eye view.</p>
-
-    <div style="display:flex;gap:var(--space-3);flex-wrap:wrap">
-      <button class="btn btn--ghost btn--sm" id="enable-alerts" type="button">🔔 Enable alerts</button>
-      <button class="btn btn--ghost btn--sm" id="test-alert" type="button">Preview alert</button>
+  <div class="container" style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:var(--space-4)">
+    <div>
+      <div class="header-eyebrow" style="color:var(--clr-accent)">📊 Overview & Analytics</div>
+      <h1 class="page-header__title">
+        Your Attendance Dashboard
+      </h1>
+      <p class="page-header__subtitle">Every subject, safe skips, recovery plans, and trend analytics in one place.</p>
+    </div>
+    <div id="dash-profile-chip" style="background:rgba(255,255,255,0.9);padding:8px 16px;border-radius:24px;border:1px solid #dfd2ff;display:flex;align-items:center;gap:10px;font-size:var(--fs-xs)">
+      <span>👤 <strong id="dash-student-name">Student</strong> (<span id="dash-student-roll">Roll #</span>)</span>
+      <a href="index.html" class="btn btn--ghost btn--sm" style="padding:4px 8px;font-size:11px">Switch</a>
     </div>
   </div>
 </header>
@@ -70,6 +71,29 @@
 
     <!-- Metrics row -->
     <div class="metrics-row" id="metrics-row"></div>
+
+    <!-- Trend Line Chart Panel -->
+    <div class="trend-panel" style="background:white;border:1.5px solid var(--clr-border-soft);border-radius:var(--radius-2xl);padding:var(--space-5) var(--space-6);margin-bottom:var(--space-6);box-shadow:var(--shadow-sm)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4);flex-wrap:wrap;gap:var(--space-3)">
+        <div>
+          <h2 style="font-size:var(--fs-base);font-weight:800;color:var(--clr-text);margin:0;display:flex;align-items:center;gap:8px">
+            📈 Attendance Trend & 75% Safety Line
+          </h2>
+          <p style="font-size:var(--fs-xs);color:var(--clr-text-muted);margin:3px 0 0">
+            Real progress curve. The dashed red line represents the mandatory 75% detention threshold.
+          </p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <label for="trend-subject-select" style="font-size:var(--fs-xs);font-weight:700;color:var(--clr-text-muted)">Subject:</label>
+          <select id="trend-subject-select" style="padding:6px 14px;border-radius:12px;border:1.5px solid var(--clr-border-soft);background:var(--clr-surface-2);font-family:inherit;font-size:var(--fs-xs);font-weight:700;color:var(--clr-text);cursor:pointer">
+            <option value="ALL">All Subjects (Overall Average)</option>
+          </select>
+        </div>
+      </div>
+      <div style="position:relative;height:240px;width:100%">
+        <canvas id="trend-line-chart"></canvas>
+      </div>
+    </div>
 
     <!-- Status breakdown -->
     <div class="status-breakdown" id="status-breakdown"></div>
