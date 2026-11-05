@@ -19,13 +19,17 @@ let selectedTrendCourse = "ALL";
 
 // ── Boot ───────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
-  if (!getStudentProfile()) {
+  const profile = getStudentProfile();
+  if (!profile) {
     window.location.replace("index.html");
     return;
   }
   startClock("navbar-clock");
   startNotifications();
   document.getElementById("refresh-attendance")?.addEventListener("click", () => window.location.reload());
+  window.addEventListener("storage", event => {
+    if (event.key?.endsWith(`_${profile.rollNumber}`)) renderAll();
+  });
 
   initTrendSelector();
 

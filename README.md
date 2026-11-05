@@ -42,9 +42,9 @@ BunkSmart gives immediate mathematical certainty through three core functions:
 - **Interactive Daily BunkSmart Flow** (`dailyFlow.js`): a step-by-step morning check-in where *Trace* calculates your safe skips, and *Prof. Maya* shakes her head angrily if you try to bunk into the danger zone.
 - **Attendance Analytics & Trend Line**: an interactive Chart.js trend line with the mandatory 75% dashed reference threshold.
 - **Student Profile Isolation**: profiles require a name and a roll number (format `24BCS123`). Attendance, courses, and logs are stored separately per roll number in browser `localStorage`.
-- **Scheduled Attendance Tracking**: classes are counted after their timetable end time, and an unmarked class is recorded as absent. Use the timetable to correct an ended class. Refreshes preserve all browser-saved records.
-- **Upcoming Class Plans**: save or change an *Attend / Skip* plan on each upcoming timetable class. Plans are stored per student in browser storage and **do not** affect attendance totals.
-- **Undo Marking & CSV Export**: one-click reversal of an accidental mark, plus a CSV report download.
+- **Scheduled Attendance Tracking**: only classes explicitly marked present or absent on the timetable affect attendance totals. Marks can be changed without double-counting, and browser-saved records survive refreshes.
+- **Daily and Upcoming Class Plans**: save an advisory *Attend / Skip* plan in browser storage. Plans do not affect attendance totals; record the actual result separately after class.
+- **CSV Export**: download an attendance report from the tracker.
 - **Interactive Character Stage**: the student's name appears in the attendance check-in and decision flow.
 - **Pre-class Smart Alerts & Live Clock**: notifications before class and a real-time navbar clock.
 
@@ -101,7 +101,7 @@ BunkSmart/
 
 ## Sample Dataset
 
-BunkSmart ships with realistic B.Tech mid-semester seed data:
+The following mid-semester records seed the standalone server API demo (`data/attendance.json`). The browser app stores each student's attendance in that browser's `localStorage`; its records are not synchronized with the server API.
 
 | **Course Code** | **Course Name** | **Credits** | **Attended / Total** | **Initial %** | **Status** | **Safe Bunks Left** | **Recovery Path** |
 |-----------------|-----------------|-------------|---------------------|---------------|------------|-------------------|------------------|
@@ -119,7 +119,7 @@ The Node.js backend (`server.js`) uses **zero external dependencies** and strict
 |---|---|
 | **JSON syntax integrity** | Malformed JSON is rejected with `400 Bad Request` |
 | **Whitelisted course IDs** | Unknown IDs (e.g. `INVALID_999`) are rejected with `400 Bad Request: Unknown courseId` |
-| **Dynamic course support** | Validated `POST /api/courses` and `DELETE /api/courses` add or remove courses across frontend and server |
+| **Dynamic course support** | The API accepts validated `POST /api/courses` and `DELETE /api/courses` requests; browser-managed courses are not synchronized with the server |
 | **Type strictness** | `present` must be a real boolean; strings like `"yes"` or numbers are rejected |
 | **Logical bounds** | `attended > total` (e.g. 25/20) or negative numbers return `400 Logical Constraint Error` |
 | **Duplicate protection** | Duplicate course IDs return `409 Conflict` |
@@ -193,4 +193,3 @@ The test suite isolates its data in temporary files via the `BUNKSMART_DB` envir
   - `feature/attendance-storyline`
 
 ---
-

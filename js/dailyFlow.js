@@ -9,8 +9,8 @@
 //  - End-of-day attendance summary plan
 // ============================================================
 
-import { getTodayClasses, getAttendance, getStatus, getSafeSkips, predictSkip } from "./logic.js";
-import { getStudentProfile } from "./storage.js";
+import { getTodayClasses, getAttendance, getStatus, getSessionId } from "./logic.js";
+import { getStudentProfile, saveAttendancePlan } from "./storage.js";
 import { escapeHtml } from "./data.js";
 
 let dailyOverlay = null;
@@ -132,10 +132,8 @@ function renderCurrentStep() {
   if (classIndex >= 0 && classIndex < todaySessions.length) {
     const session = todaySessions[classIndex];
     const course = session.course;
-    const { percent } = getAttendance(session.courseId);
-    const status = getStatus(session.courseId);
-    const skips = getSafeSkips(session.courseId);
-    const prediction = predictSkip(session.courseId, 1);
+    const projection = getPlanProjection(session.courseId, classIndex);
+    const { percent, status, skips, prediction } = projection;
 
     card.innerHTML = `
       <div class="daily-flow-header">
@@ -248,7 +246,7 @@ function renderCurrentStep() {
       <div class="daily-characters-row">
         <img src="swetha.png" class="daily-char-avatar" alt="Prof. Maya" />
         <div class="daily-speech-bubble">
-          <strong>Prof. Maya:</strong> This is only a plan. Attendance is recorded automatically after each scheduled class ends.
+          <strong>Prof. Maya:</strong> This is only a plan. Mark each completed class on the timetable to update your attendance.
         </div>
       </div>
     </div>
@@ -262,14 +260,51 @@ function renderCurrentStep() {
   `;
 }
 
+function getPlanProjection(courseId, beforeIndex) {
+  const record = getAttendance(courseId);
+  let attended = record.attended;
+  let total = record.total;
+
+  todaySessions.slice(0, beforeIndex).forEach((session, index) => {
+    if (session.courseId !== courseId || !Object.hasOwn(plannedDecisions, index)) return;
+    total++;
+    if (plannedDecisions[index]) attended++;
+  });
+
+  const requiredRate = (todaySessions.find(session => session.courseId === courseId)?.course.requiredPercent ?? 75) / 100;
+  const exactFraction = total === 0 ? 0 : attended / total;
+  const percent = total === 0 ? 0 : Math.floor(exactFraction * 100);
+  const status = total === 0 || exactFraction >= requiredRate
+    ? "safe"
+    : exactFraction >= 0.6 ? "warning" : "danger";
+  const skips = total > 0 && attended > 0 && exactFraction >= requiredRate
+    ? Math.max(0, Math.floor((attended / requiredRate) - total))
+    : 0;
+  const newTotal = total + 1;
+  const skipFraction = attended / newTotal;
+  const skipPercent = Math.floor(skipFraction * 100);
+  const skipIsSafe = skipFraction >= requiredRate;
+
+  return {
+    percent,
+    status,
+    skips,
+    prediction: {
+      percent: skipPercent,
+      drop: percent - skipPercent,
+      isSafe: skipIsSafe,
+      safeSkipsAfter: Math.max(0, Math.floor((attended / requiredRate) - newTotal)),
+    },
+  };
+}
+
 // ── Interactive Choice Handler ──────────────────────────────
 window.dailyChoose = function(classIndex, willAttend) {
   const session = todaySessions[classIndex];
   if (!session) return;
 
   const course = session.course;
-  const { percent } = getAttendance(session.courseId);
-  const prediction = predictSkip(session.courseId, 1);
+  const { percent, skips, prediction } = getPlanProjection(session.courseId, classIndex);
   const reactionZone = document.getElementById("daily-reaction-zone");
   const buttonsZone = document.getElementById("daily-choice-buttons");
 
@@ -367,6 +402,17 @@ window.closeDailyFlowModal = function() {
 };
 
 window.dailyCommitPlan = function() {
+  const today = new Date();
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+  todaySessions.forEach((session, index) => {
+    const classDate = new Date(monday);
+    classDate.setDate(monday.getDate() + session.day);
+    saveAttendancePlan(
+      getSessionId(classDate, session),
+      plannedDecisions[index] !== false
+    );
+  });
   closeDailyFlow();
   if (typeof onPlanCompleteCallback === "function") {
     onPlanCompleteCallback(plannedDecisions);

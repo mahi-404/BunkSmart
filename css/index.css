@@ -1,5 +1,5 @@
 /* ============================================================
-   index.css  –  🌸 Pastel Aesthetic Landing Page
+   index.css  –  🌸 Editorial Landing Page
    ============================================================ */
 
 /* ── Hero ────────────────────────────────────────────────────── */
@@ -10,6 +10,7 @@
   position: relative;
   overflow: hidden;
   padding: var(--space-16) 0 var(--space-12);
+  background: linear-gradient(120deg, #e6dcff 0%, #ffddec 52%, #d9f3ff 100%);
 }
 
 .hero-orb {
@@ -26,31 +27,36 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  background: white;
-  border: 1.5px solid var(--clr-border);
-  border-radius: var(--radius-full);
+  background: rgba(186,166,255,0.08);
+  border: 1px solid rgba(141,106,247,0.12);
+  border-radius: 0.35rem;
   padding: var(--space-2) var(--space-5);
   font-size: var(--fs-xs);
   font-weight: var(--fw-bold);
   color: var(--clr-lavender-dark);
   letter-spacing: 0.04em;
   margin-bottom: var(--space-6);
-  box-shadow: var(--shadow-xs);
+  box-shadow: none;
   animation: fadeUp 0.6s ease both;
 }
 
 .hero-title {
-  font-size: clamp(3rem, 8vw, 5.5rem);
-  font-weight: var(--fw-extrabold);
+  font-family: var(--font-display);
+  font-size: clamp(3.2rem, 7vw, 6rem);
+  font-weight: var(--fw-bold);
   color: var(--clr-text);
-  line-height: 1.06;
-  letter-spacing: -0.04em;
+  line-height: 0.95;
+  letter-spacing: -0.05em;
   margin-bottom: var(--space-6);
   animation: fadeUp 0.6s 0.08s ease both;
 }
 
 .hero-title-grad {
-  color: var(--clr-lavender-dark);
+  display: inline-block;
+  background: linear-gradient(135deg, #8d6af7 0%, #f35c98 42%, #ff9f6e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .hero-sub {
@@ -81,19 +87,19 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  background: white;
-  border: 1.5px solid var(--clr-border);
-  border-radius: var(--radius-full);
+  background: rgba(255,255,255,0.9);
+  border: 1px solid rgba(114,82,156,0.12);
+  border-radius: 0.35rem;
   padding: var(--space-2) var(--space-4);
   font-size: var(--fs-xs);
   color: var(--clr-text-muted);
   font-weight: var(--fw-semibold);
-  box-shadow: var(--shadow-xs);
+  box-shadow: none;
 }
 
 @keyframes fadeUp {
   from { opacity:0; transform:translateY(22px); }
-  to   { opacity:1; transform:translateY(0);    }
+  to   { opacity:1; transform:translateY(0); }
 }
 
 /* ── Shared section styles ───────────────────────────────────── */
@@ -146,14 +152,14 @@
 .char-card {
   background: white;
   border: 1.5px solid var(--clr-border-soft);
-  border-radius: var(--radius-2xl);
+  border-radius: 1rem;
   padding: var(--space-8) var(--space-6);
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   gap: var(--space-3);
-  box-shadow: var(--shadow-sm);
+  box-shadow: none;
   transition: all var(--transition-spring);
   position: relative;
   overflow: hidden;
@@ -361,7 +367,99 @@
   text-align: center;
   font-size: var(--fs-xs);
   color: var(--clr-text-muted);
-  background: white;
+  background: rgba(255,255,255,0.72);
+  position: relative;
+  z-index: 2;
+}
+
+.flower-field {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 104px;
+  pointer-events: none;
+  z-index: 4;
+  overflow: hidden;
+  background: transparent;
+}
+
+.flower {
+  position: absolute;
+  left: var(--x);
+  bottom: 0;
+  width: var(--size);
+  height: calc(var(--size) + 26px);
+  transform: translate3d(var(--mouse-shift, 0px), 0, 0) rotate(var(--mouse-tilt, 0deg));
+  transform-origin: 50% 100%;
+  transition: transform 260ms ease-out;
+}
+
+.flower__bloom {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: var(--size);
+  height: var(--size);
+  transform-origin: 50% 50%;
+  animation: flower-sway 3.2s ease-in-out infinite alternate;
+}
+
+.flower__bloom i {
+  position: absolute;
+  left: 34%;
+  top: 2%;
+  width: 32%;
+  height: 49%;
+  border-radius: 50% 50% 42% 42%;
+  background: var(--petal-color);
+  transform-origin: 50% 100%;
+  box-shadow: inset 0 -2px 0 rgba(80, 44, 57, 0.12);
+}
+
+.flower__bloom i:nth-child(2) { transform: rotate(60deg); }
+.flower__bloom i:nth-child(3) { transform: rotate(120deg); }
+.flower__bloom i:nth-child(4) { transform: rotate(180deg); }
+.flower__bloom i:nth-child(5) { transform: rotate(240deg); }
+.flower__bloom i:nth-child(6) { transform: rotate(300deg); }
+
+.flower__bloom b {
+  position: absolute;
+  z-index: 1;
+  left: 37%;
+  top: 37%;
+  width: 26%;
+  height: 26%;
+  border-radius: 50%;
+  background: #ffd84d;
+  box-shadow: 0 0 0 1px rgba(134, 91, 24, 0.16);
+}
+
+.flower__stem {
+  position: absolute;
+  left: calc(50% - 1px);
+  bottom: 0;
+  width: 2px;
+  height: 26px;
+  background: #58ae68;
+}
+
+.flower__leaf {
+  position: absolute;
+  left: calc(50% - 1px);
+  bottom: 7px;
+  width: 12px;
+  height: 7px;
+  border-radius: 100% 0 100% 0;
+  background: #68c66f;
+  transform: rotate(-35deg);
+}
+
+.flower--pink { --petal-color: #f65b9f; }
+
+@keyframes flower-sway {
+  from { transform: rotate(-7deg); }
+  to { transform: rotate(7deg); }
 }
 
 /* ── Responsive ─────────────────────────────────────────────── */
@@ -370,6 +468,7 @@
   .hero-title { font-size: 2.8rem; }
   .hero-actions { flex-direction: column; }
   .chars-grid { grid-template-columns: 1fr; }
+  .flower-field { height: 86px; }
 }
 
 
@@ -390,9 +489,9 @@
   max-width: 700px;
   padding: 24px;
   border: 1.5px solid var(--clr-border-soft);
-  border-radius: var(--radius-2xl);
-  background: #fff;
-  box-shadow: var(--shadow-sm);
+  border-radius: 1rem;
+  background: rgba(255,255,255,0.9);
+  box-shadow: none;
 }
 
 .student-login h3 {
@@ -411,7 +510,7 @@
   min-width: 180px;
   padding: 14px 16px;
   border: 1px solid #dfd2ff;
-  border-radius: 12px;
+  border-radius: 0.55rem;
   background: #ffffff;
   color: #38206f;
   font-family: inherit;
@@ -452,8 +551,8 @@
 #student-login-form button {
   padding: 14px 24px;
   border: none;
-  border-radius: 30px;
-  background: #a78bfa;
+  border-radius: 0.55rem;
+  background: linear-gradient(135deg, #8d6af7 0%, #f35c98 100%);
   color: white;
   font-family: inherit;
   font-size: 15px;

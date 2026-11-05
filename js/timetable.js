@@ -17,6 +17,7 @@ const today       = new Date();
 const rawDay      = today.getDay();             // 0=Sun, 1=Mon … 6=Sat
 const todayIdx    = rawDay === 0 ? -1 : rawDay - 1; // Mon=0 … Fri=4, weekend=-1
 let   selectedDay = todayIdx >= 0 && todayIdx <= 4 ? todayIdx : 0;
+let   openDetailContext = null;
 
 // ── Boot ───────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
@@ -44,6 +45,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   const profile = getStudentProfile();
   document.getElementById("timetable-student-name").textContent = profile.name;
   document.getElementById("timetable-student-roll").textContent = profile.rollNumber;
+  window.addEventListener("storage", event => {
+    if (!event.key?.endsWith(`_${profile.rollNumber}`)) return;
+    renderAll();
+    if (openDetailContext) {
+      window.openDetail(openDetailContext.courseId, openDetailContext.sessionId);
+    }
+  });
   document.getElementById("refresh-attendance")?.addEventListener("click", () => window.location.reload());
   const requestedCourse = new URLSearchParams(window.location.search).get("course");
   if (requestedCourse) {
@@ -301,6 +309,7 @@ function bindPanel() {
 }
 
 window.openDetail = function(courseId, sessionId = null) {
+  openDetailContext = { courseId, sessionId };
   const course  = getCourse(courseId);
   if (!course) return;
   const scheduledClass = sessionId ? getScheduledClass(sessionId) : null;
@@ -387,13 +396,17 @@ window.openDetail = function(courseId, sessionId = null) {
           Mark absent
         </button>
       </div>
-      <p style="font-size:var(--fs-xs);color:var(--clr-text-muted)">This class has ended. Your mark can be changed without adding another class.</p>
+      <p style="font-size:var(--fs-xs);color:var(--clr-text-muted)">
+        ${scheduledClass
+          ? `Recorded: ${scheduledClass.present ? "Present" : "Absent"}. You can change this mark.`
+          : "Not marked yet. Choose present or absent to update your attendance record."}
+      </p>
     ` : sessionId ? `
       <div style="margin-bottom:var(--space-4);padding:var(--space-3);border:1px solid var(--clr-border-soft);border-radius:var(--radius-lg)">
         <div style="font-weight:700;font-size:var(--fs-sm);margin-bottom:var(--space-2)">Your plan for this class</div>
         <div style="font-size:var(--fs-xs);color:var(--clr-text-muted);margin-bottom:var(--space-3)">
           ${plannedAttendance === null
-            ? "Choose Attend or Skip. This saves your plan only; attendance is recorded after class ends."
+            ? "Choose Attend or Skip to save a plan. After class ends, mark your actual attendance here."
             : `Plan saved: ${plannedAttendance ? "Attend" : "Skip"}. You can change it here.`}
         </div>
         <div style="display:flex;gap:var(--space-2)">
@@ -436,8 +449,21 @@ window.clearClassPlan = function(sessionId) {
 };
 
 window.quickMark = async function(courseId, present, sessionId) {
-  const session = getScheduledClass(sessionId);
-  if (!session) return;
+  let session = getScheduledClass(sessionId);
+  if (!session) {
+    const slot = getSlotBySessionId(sessionId);
+    if (!slot || slot.courseId !== courseId) {
+      throw new Error("This class could not be matched to the timetable.");
+    }
+    session = {
+      id: sessionId,
+      date: sessionId.slice(0, 10),
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+      courseId: slot.courseId,
+      room: slot.room,
+    };
+  }
   await markAttendance(courseId, present, session);
   renderAll();
   window.openDetail(courseId, sessionId);
@@ -450,6 +476,7 @@ function getSlotBySessionId(sessionId) {
 }
 
 window.closeDetail = function() {
+  openDetailContext = null;
   document.getElementById("detail-panel")?.classList.remove("open");
 };
 

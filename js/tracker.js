@@ -48,8 +48,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (storyNameEl) storyNameEl.textContent = profile.name;
 
   // Initialize Daily Flow
-  initDailyFlow(async () => {
-    showToast("Plan complete", "Attendance will be recorded after each scheduled class ends.", "info");
+  initDailyFlow(() => {
+    showToast("Plan saved", "Your plan is on the timetable. Mark each completed class to update attendance.", "info");
+  });
+  window.addEventListener("storage", event => {
+    if (event.key?.endsWith(`_${profile.rollNumber}`)) refreshAll();
   });
 
   try {
