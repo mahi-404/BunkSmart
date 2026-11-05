@@ -48,10 +48,6 @@ function showToast(title, body, type = "warning") {
   t.setAttribute("role", "alert");
   t.style.borderLeft = `3px solid ${colors[type] ?? colors.info}`;
 
-  const icon = document.createElement("div");
-  icon.style.cssText = "font-size:1.4rem;flex-shrink:0";
-  icon.textContent = type === "danger" ? "🚨" : "⚠️";
-
   const copy = document.createElement("div");
   copy.style.flex = "1";
   const h = document.createElement("div");
@@ -69,7 +65,7 @@ function showToast(title, body, type = "warning") {
   close.style.cssText = "background:none;border:none;color:var(--clr-text-muted);cursor:pointer;font-size:1rem;padding:0 0 0 8px";
   close.onclick = () => t.remove();
 
-  t.append(icon, copy, close);
+  t.append(copy, close);
   container.appendChild(t);
   setTimeout(() => {
     t.style.transition = "opacity 0.4s";
@@ -122,8 +118,8 @@ function wireButtons() {
   if (enable) {
     const refresh = () => {
       const s = notificationState();
-      enable.textContent = { granted: "🔔 Alerts on", denied: "🔕 Blocked in browser",
-        unsupported: "🔔 In-app alerts only", default: "🔔 Enable alerts" }[s];
+      enable.textContent = { granted: "Alerts on", denied: "Blocked in browser",
+        unsupported: "In-app alerts only", default: "Enable alerts" }[s];
       enable.disabled = s !== "default";
     };
     refresh();

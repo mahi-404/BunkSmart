@@ -386,6 +386,26 @@
   max-width: 700px;
 }
 
+.student-login {
+  max-width: 700px;
+  padding: 24px;
+  border: 1.5px solid var(--clr-border-soft);
+  border-radius: var(--radius-2xl);
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+}
+
+.student-login h3 {
+  margin: 0 0 var(--space-2);
+  color: var(--clr-text);
+  font-size: var(--fs-xl);
+}
+
+.student-login > p {
+  color: var(--clr-text-muted);
+  line-height: var(--lh-loose);
+}
+
 #student-login-form input {
   flex: 1;
   min-width: 180px;
@@ -398,6 +418,26 @@
   font-size: 14px;
   outline: none;
   box-sizing: border-box;
+}
+
+.login-hint,
+#profile-message {
+  margin: 10px 0 0;
+  font-size: var(--fs-xs);
+  color: var(--clr-text-muted);
+}
+
+#profile-message:empty {
+  display: none;
+}
+
+#profile-message.login-message--error {
+  color: var(--clr-danger-text);
+  font-weight: var(--fw-semibold);
+}
+
+#student-login-form input:invalid:not(:placeholder-shown) {
+  border-color: var(--clr-danger);
 }
 
 #student-login-form input::placeholder {

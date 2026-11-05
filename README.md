@@ -19,15 +19,17 @@ BunkSmart gives immediate mathematical certainty:
 - **`classesNeeded(courseId)`**: Calculates how many consecutive classes you must attend to climb out of the danger zone.
 - **Interactive Daily BunkSmart Flow (`dailyFlow.js`)**: Step-by-step morning check-in where Trace calculates safe skips and Prof. Maya shakes her head angrily if you try to bunk into the danger zone!
 - **Attendance Analytics & Trend Line**: Interactive Chart.js trend line with the mandatory 75% dashed reference threshold.
-- **Student Profile Isolation**: Independent attendance records, subjects, and logs scoped by Roll Number.
+- **Student Profile Isolation**: Profiles require a name and a roll number in the format `24BCS123`. Attendance, courses, and logs are stored separately per roll number in browser `localStorage`.
+- **Scheduled Attendance Tracking**: Classes are counted after their timetable end time; an unmarked class is recorded absent. Use the timetable to correct an ended class, and refreshes preserve all browser-saved records.
+- **Upcoming Class Plans**: Save or change an Attend/Skip plan on each upcoming timetable class. Plans are stored per student in browser storage and do not affect attendance totals.
 - **Undo Marking & CSV Export**: One-click accidental mark reversal and CSV report download.
-- **Interactive Character Stage**: Alex (Student), Trace (AI Tracker), and Prof. Maya (Faculty) react to your attendance choices in real time.
+- **Interactive Character Stage**: The student's name appears in the attendance check-in and decision flow.
 
 ---
 
 ## 🛠️ 2. Project Architecture & Code Structure
 
-A clean, modular client–server architecture built with pure vanilla HTML, modern CSS, modular ES JavaScript, and a zero-dependency Node.js HTTP backend.
+A modular web app built with vanilla HTML, CSS, ES modules, and a zero-dependency Node.js server. Student profiles and attendance are saved in browser storage and do not sync between browsers or devices.
 
 ```
 BunkSmart/
@@ -46,12 +48,12 @@ BunkSmart/
 │   ├── dashboard.css       # Overview analytics metrics & doughnut chart container
 │   └── index.css           # Landing page hero & squad presentation styles
 ├── data/
-│   ├── attendance.json     # JSON database (survives browser refresh & server restarts)
+│   ├── attendance.json     # Server-side demo/test data
 │   └── defaultData.js      # Realistic B.Tech mid-semester seed data
 ├── js/
 │   ├── data.js             # Course list & weekly timetable schedule
 │   ├── logic.js            # Core attendance calculation formulas (The Brain)
-│   ├── storage.js          # Persistence layer & server REST API client
+│   ├── storage.js          # Browser-local profile and attendance persistence
 │   ├── dialogue.js         # Typewriter dialogue stage & character animations
 │   ├── timetable.js        # Timetable renderer & day schedule controller
 │   ├── tracker.js          # Tracker UI controller & skip prediction modal
@@ -59,13 +61,13 @@ BunkSmart/
 │   ├── clock.js            # Real-time navbar live clock
 │   └── notify.js           # Pre-class smart alerts & notifications
 └── test/
-    └── server.test.js      # Automated test suite (16 passing tests)
+    ├── server.test.js      # Server API tests
+    └── attendance-local.test.js # Browser storage and profile isolation tests
 ```
 
 ### Realistic Engineering Dataset
 | Course Code | Course Name | Credits | Attended / Total | Initial % | Status | Safe Bunks Left | Recovery Path |
 |---|---|---|---|---|---|---|---|
-feature/daily-attendance-flow
 | **CS301** | Advanced Algorithms | 4 | 18 / 22 | 82% | `SAFE` | **2 bunks** | Above 75% target |
 | **DS365** | Full Stack Development | 3 | 15 / 20 | 75% | `SAFE` | **0 bunks** | Borderline (0 bunks) |
 | **CS351** | Software Design | 3 | 14 / 20 | 70% | `WARNING` | 0 bunks | Need 4 classes to recover |
@@ -91,6 +93,8 @@ The Node.js backend server (`server.js`) uses zero external dependencies and enf
 npm start
 ```
 Open **http://localhost:3000** in your browser.
+
+Enter your name and roll number (two year digits, `B`, `CS`, `DS`, or `EC`, then three digits; for example, `24BCS123`). Your attendance and profile are saved per roll number in this browser's `localStorage`, so they survive refreshes. Clearing browser site data or using a different browser/device removes or does not carry over those records.
 
 ### Running the Test Suite
 ```bash

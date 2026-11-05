@@ -1,20 +1,21 @@
 // ============================================================
-//  storage.js – Persistence, LocalStorage, Profiles & Server Sync
-//  Handles student profile isolation, local storage caching,
-//  undo history, and server synchronization.
+//  storage.js – Browser persistence and roll-number-scoped student data.
 // ============================================================
 
 const BASE_KEY = "bunksmart_records";
 const BASE_COURSES_KEY = "bunksmart_courses";
 const BASE_LOG_KEY = "bunksmart_attendance_log";
+const BASE_SESSIONS_KEY = "bunksmart_class_sessions";
+const BASE_PLANS_KEY = "bunksmart_attendance_plans";
+const BASE_TRACKING_START_KEY = "bunksmart_tracking_start";
 const PROFILE_KEY = "bunksmart_student_profile";
 
 export const SEED_RECORDS = {
-  CS301: { attended: 18, total: 22 }, // 81.8% -> Safe (can skip 2)
-  DS365: { attended: 15, total: 20 }, // 75.0% -> Safe on border (can skip 0)
-  CS351: { attended: 14, total: 20 }, // 70.0% -> Warning (needs 4 classes)
-  DS304: { attended: 10, total: 18 }, // 55.6% -> Danger (needs 14 classes)
-  EC354: { attended: 16, total: 20 }, // 80.0% -> Safe (can skip 1)
+  CS301: { attended: 0, total: 0 },
+  DS365: { attended: 0, total: 0 },
+  CS351: { attended: 0, total: 0 },
+  DS304: { attended: 0, total: 0 },
+  EC354: { attended: 0, total: 0 },
 };
 
 // ── Student Profile Management ──────────────────────────────
@@ -23,7 +24,10 @@ export function getStudentProfile() {
     const raw = localStorage.getItem(PROFILE_KEY);
     if (!raw) return null;
     const profile = JSON.parse(raw);
-    if (profile && typeof profile === "object" && profile.name && profile.rollNumber) {
+    if (profile && typeof profile === "object" &&
+        typeof profile.name === "string" && profile.name.trim().length > 0 &&
+        typeof profile.rollNumber === "string" &&
+        /^[0-9]{2}B(?:CS|DS|EC)[0-9]{3}$/.test(profile.rollNumber)) {
       return profile;
     }
     return null;
@@ -39,22 +43,32 @@ export function saveStudentProfile(profile) {
   const name = String(profile.name || "").trim();
   const rollNumber = String(profile.rollNumber || "").trim().toUpperCase();
 
-  if (!name || !rollNumber) {
-    throw new Error("Both name and roll number are required.");
+  if (!name || name.length > 80) {
+    throw new Error("Name must contain between 1 and 80 characters.");
+  }
+  if (!/^[0-9]{2}B(?:CS|DS|EC)[0-9]{3}$/.test(rollNumber)) {
+    throw new Error("Roll number must match the format 24BCS123.");
   }
 
+  const previousProfile = getStudentProfile();
   const clean = {
     name,
     rollNumber,
+    createdAt: previousProfile?.rollNumber === rollNumber
+      ? previousProfile.createdAt || new Date().toISOString()
+      : new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
 
   localStorage.setItem(PROFILE_KEY, JSON.stringify(clean));
 
-  // If this student does not have records yet, initialize them with SEED_RECORDS
   const studentKey = getScopedKey(BASE_KEY, rollNumber);
   if (!localStorage.getItem(studentKey)) {
     localStorage.setItem(studentKey, JSON.stringify(SEED_RECORDS));
+  }
+  const trackingStartKey = getScopedKey(BASE_TRACKING_START_KEY, rollNumber);
+  if (!localStorage.getItem(trackingStartKey)) {
+    localStorage.setItem(trackingStartKey, new Date().toISOString());
   }
 
   return clean;
@@ -72,12 +86,8 @@ function getScopedKey(base, specificRoll = null) {
 
 // ── Attendance Records ──────────────────────────────────────
 export function loadRecords() {
-feature/daily-attendance-flow
   const key = getScopedKey(BASE_KEY);
-  const stored = localStorage.getItem(key) || localStorage.getItem(BASE_KEY) || localStorage.getItem("attendai_records");
-
-
-  const stored = localStorage.getItem(KEY);
+  const stored = localStorage.getItem(key);
 
   if (!stored) {
     saveRecords(SEED_RECORDS);
@@ -90,7 +100,8 @@ feature/daily-attendance-flow
       throw new Error("Saved attendance data is invalid.");
     }
     return records;
-  } catch {
+  } catch (error) {
+    console.warn("[Storage] Invalid attendance data; restoring the starting records.", error);
     saveRecords(SEED_RECORDS);
     return { ...SEED_RECORDS };
   }
@@ -102,14 +113,20 @@ export function saveRecords(records) {
     localStorage.setItem(key, JSON.stringify(records));
   } catch (err) {
     console.error("[Storage] Failed to save records to localStorage:", err);
+    throw new Error("Attendance could not be saved in this browser. Check available storage space and browser settings.", { cause: err });
   }
 }
 
 // ── Courses ─────────────────────────────────────────────────
 export function loadCourses(defaultCourses) {
   const key = getScopedKey(BASE_COURSES_KEY);
-  const stored = localStorage.getItem(key) || localStorage.getItem(BASE_COURSES_KEY);
-  return stored ? JSON.parse(stored) : defaultCourses.map(course => ({ ...course }));
+  const stored = localStorage.getItem(key);
+  if (!stored) return defaultCourses.map(course => ({ ...course }));
+  const courses = JSON.parse(stored);
+  if (!Array.isArray(courses)) {
+    throw new TypeError("Saved courses must be a list.");
+  }
+  return courses;
 }
 
 export function saveCourses(courses) {
@@ -120,7 +137,7 @@ export function saveCourses(courses) {
 // ── Attendance Log & History ────────────────────────────────
 export function loadAttendanceLog() {
   const key = getScopedKey(BASE_LOG_KEY);
-  const stored = localStorage.getItem(key) || localStorage.getItem(BASE_LOG_KEY);
+  const stored = localStorage.getItem(key);
   if (!stored) return [];
 
   try {
@@ -135,6 +152,148 @@ export function loadAttendanceLog() {
 export function saveAttendanceLog(entries) {
   const key = getScopedKey(BASE_LOG_KEY);
   localStorage.setItem(key, JSON.stringify(entries));
+}
+
+function loadScheduledClasses() {
+  const stored = localStorage.getItem(getScopedKey(BASE_SESSIONS_KEY));
+  if (!stored) return {};
+  const sessions = JSON.parse(stored);
+  if (!sessions || typeof sessions !== "object" || Array.isArray(sessions)) {
+    throw new TypeError("Saved class attendance must be an object.");
+  }
+  return sessions;
+}
+
+export function getScheduledClass(sessionId) {
+  return loadScheduledClasses()[sessionId] || null;
+}
+
+export function getScheduledClasses() {
+  return Object.values(loadScheduledClasses());
+}
+
+function loadAttendancePlans() {
+  const stored = localStorage.getItem(getScopedKey(BASE_PLANS_KEY));
+  if (!stored) return {};
+  const plans = JSON.parse(stored);
+  if (!plans || typeof plans !== "object" || Array.isArray(plans)) {
+    throw new TypeError("Saved attendance plans must be an object.");
+  }
+  return plans;
+}
+
+export function getAttendancePlan(sessionId) {
+  const plans = loadAttendancePlans();
+  return Object.hasOwn(plans, sessionId) ? plans[sessionId] : null;
+}
+
+export function saveAttendancePlan(sessionId, willAttend) {
+  if (typeof sessionId !== "string" || !sessionId ||
+      typeof willAttend !== "boolean") {
+    throw new TypeError("Attendance plan details are invalid.");
+  }
+  const plans = loadAttendancePlans();
+  plans[sessionId] = willAttend;
+  localStorage.setItem(getScopedKey(BASE_PLANS_KEY), JSON.stringify(plans));
+  return willAttend;
+}
+
+export function removeAttendancePlan(sessionId) {
+  const plans = loadAttendancePlans();
+  if (!Object.hasOwn(plans, sessionId)) return false;
+  delete plans[sessionId];
+  localStorage.setItem(getScopedKey(BASE_PLANS_KEY), JSON.stringify(plans));
+  return true;
+}
+
+export function recordScheduledClass(session, present) {
+  if (!session || typeof session.id !== "string" || !session.id ||
+      typeof session.courseId !== "string" || typeof present !== "boolean") {
+    throw new TypeError("Scheduled class attendance details are invalid.");
+  }
+
+  const sessions = loadScheduledClasses();
+  const previous = sessions[session.id];
+  const current = getRecord(session.courseId);
+  const attended = current.attended +
+    (present ? 1 : 0) - (previous?.present ? 1 : 0);
+  const total = current.total + (previous ? 0 : 1);
+  const nextRecord = { attended, total };
+
+  if (attended < 0 || attended > total) {
+    throw new RangeError("Scheduled attendance counts are inconsistent.");
+  }
+
+  sessions[session.id] = { ...session, present };
+  removeAttendancePlan(session.id);
+  saveRecords({ ...loadRecords(), [session.courseId]: nextRecord });
+  localStorage.setItem(getScopedKey(BASE_SESSIONS_KEY), JSON.stringify(sessions));
+  return { ...sessions[session.id], record: nextRecord };
+}
+
+export function getAttendanceTrackingStart() {
+  const profile = getStudentProfile();
+  if (!profile) return null;
+
+  const key = getScopedKey(BASE_TRACKING_START_KEY);
+  const stored = localStorage.getItem(key);
+  if (stored) {
+    const parsed = new Date(stored);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+
+  const startedAt = new Date();
+  localStorage.setItem(key, startedAt.toISOString());
+
+  if (!profile.createdAt) {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({
+      ...profile,
+      createdAt: startedAt.toISOString(),
+    }));
+  }
+  return startedAt;
+}
+
+export function reconcileScheduledClasses(timetable, now = new Date()) {
+  const startedAt = getAttendanceTrackingStart();
+  if (!startedAt) return 0;
+
+  const cursor = new Date(startedAt);
+  cursor.setHours(0, 0, 0, 0);
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  let added = 0;
+
+  for (; cursor <= today; cursor.setDate(cursor.getDate() + 1)) {
+    const weekday = (cursor.getDay() + 6) % 7;
+    for (const slot of timetable) {
+      if (slot.day !== weekday) continue;
+
+      const [endHour, endMinute] = slot.endTime.split(":").map(Number);
+      const endsAt = new Date(cursor);
+      endsAt.setHours(endHour, endMinute, 0, 0);
+      if (endsAt > now || endsAt < startedAt) continue;
+
+      const date = [
+        cursor.getFullYear(),
+        String(cursor.getMonth() + 1).padStart(2, "0"),
+        String(cursor.getDate()).padStart(2, "0"),
+      ].join("-");
+      const id = `${date}_${slot.startTime}_${slot.courseId}`;
+      if (!getScheduledClass(id)) {
+        recordScheduledClass({
+          id,
+          date,
+          startTime: slot.startTime,
+          endTime: slot.endTime,
+          courseId: slot.courseId,
+        }, false);
+        added++;
+      }
+      removeAttendancePlan(id);
+    }
+  }
+  return added;
 }
 
 export function getRecord(courseId) {
@@ -228,113 +387,34 @@ export function exportAttendanceCSV(courses) {
 export function clearAll() {
   const key = getScopedKey(BASE_KEY);
   const logKey = getScopedKey(BASE_LOG_KEY);
+  const sessionsKey = getScopedKey(BASE_SESSIONS_KEY);
+  const plansKey = getScopedKey(BASE_PLANS_KEY);
   localStorage.removeItem(key);
   localStorage.removeItem(logKey);
+  localStorage.removeItem(sessionsKey);
+  localStorage.removeItem(plansKey);
+  localStorage.setItem(getScopedKey(BASE_TRACKING_START_KEY), new Date().toISOString());
 }
 
 // ── Backend Server Synchronization ──────────────────────────
 export async function syncFromServer() {
-  try {
-    const res = await fetch("/api/attendance", {
-      headers: { "Cache-Control": "no-cache" }
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (data && data.records) {
-      const records = loadRecords();
-      for (const [id, rec] of Object.entries(data.records)) {
-        records[id] = { attended: rec.attended, total: rec.total };
-      }
-      saveRecords(records);
-      return { online: true, records };
-    }
-  } catch {
-    // Offline / running without backend server
-  }
   return { online: false, records: loadRecords() };
 }
 
 export async function postAttendanceMark(courseId, present) {
-  try {
-    const res = await fetch("/api/attendance/mark", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ courseId, present })
-    });
-    const result = await res.json();
-    if (!res.ok) {
-      return { success: false, error: result.message || result.error || "Failed to mark attendance" };
-    }
-    const records = loadRecords();
-    records[courseId] = {
-      attended: result.record.attended,
-      total: result.record.total
-    };
-    saveRecords(records);
-    return { success: true, record: result.record, offline: false };
-  } catch (err) {
-    // Network failure / offline: do NOT increment again!
-    // The optimistic update in markAttendance already recorded it in local storage.
-    return { success: true, offline: true, error: err.message };
-  }
+  return { success: true, offline: true, record: getRecord(courseId), present };
 }
 
 // ── Course API Synchronization ──────────────────────────────
 
 export async function syncCoursesFromServer() {
-  try {
-    const res = await fetch("/api/courses", {
-      headers: { "Cache-Control": "no-cache" }
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    if (data && Array.isArray(data.courses) && data.courses.length > 0) {
-      const courses = data.courses.map(c => ({
-        id: c.id,
-        name: c.name,
-        code: c.code,
-        instructor: c.instructor,
-        credits: c.credits,
-        color: c.color,
-        requiredPercent: c.requiredPercent || 75
-      }));
-      saveCourses(courses);
-      return { online: true, courses };
-    }
-  } catch {
-    // Offline mode
-  }
   return { online: false, courses: loadCourses([]) };
 }
 
 export async function postCourseToServer(course) {
-  try {
-    const res = await fetch("/api/courses", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(course)
-    });
-    const result = await res.json();
-    if (!res.ok) {
-      return { success: false, error: result.message || result.error || "Failed to save course to server" };
-    }
-    return { success: true, course: result.course };
-  } catch (err) {
-    return { success: true, offline: true, error: err.message };
-  }
+  return { success: true, course, offline: true };
 }
 
 export async function deleteCourseFromServer(courseId) {
-  try {
-    const res = await fetch(`/api/courses?id=${encodeURIComponent(courseId)}`, {
-      method: "DELETE"
-    });
-    const result = await res.json();
-    if (!res.ok) {
-      return { success: false, error: result.message || result.error || "Failed to delete course on server" };
-    }
-    return { success: true };
-  } catch (err) {
-    return { success: true, offline: true, error: err.message };
-  }
+  return { success: true, courseId, offline: true };
 }

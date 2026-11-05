@@ -9,14 +9,14 @@
 //  - End-of-day attendance summary plan
 // ============================================================
 
-import { getTodayClasses, getAttendance, getStatus, getSafeSkips, predictSkip, markAttendance } from "./logic.js";
+import { getTodayClasses, getAttendance, getStatus, getSafeSkips, predictSkip } from "./logic.js";
 import { getStudentProfile } from "./storage.js";
 import { escapeHtml } from "./data.js";
 
 let dailyOverlay = null;
 let currentStep = 0; // 0 = welcome, 1..N = classes, N+1 = summary
 let todaySessions = [];
-let plannedDecisions = {}; // { [courseId]: boolean } (true=attend, false=skip)
+let plannedDecisions = {}; // { [classIndex]: boolean } (true=attend, false=skip)
 let onPlanCompleteCallback = null;
 
 export function initDailyFlow(onComplete = null) {
@@ -66,7 +66,7 @@ function renderCurrentStep() {
   if (!card) return;
 
   const profile = getStudentProfile();
-  const studentName = profile?.name ? escapeHtml(profile.name) : "Alex";
+  const studentName = profile?.name ? escapeHtml(profile.name) : "Student";
   const todayData = getTodayClasses();
 
   // ── Step 0: Welcome / Day Overview ──
@@ -78,7 +78,7 @@ function renderCurrentStep() {
             Daily Attendance Planner
           </div>
           <h2 style="font-size:20px;font-weight:800;color:#2e1065;margin:4px 0 0">
-            Good morning, ${studentName}! ☀️
+            Good morning, ${studentName}.
           </h2>
         </div>
         <button class="btn btn--ghost btn--sm" onclick="window.closeDailyFlowModal()" style="font-size:18px">✕</button>
@@ -86,7 +86,7 @@ function renderCurrentStep() {
 
       <div class="daily-flow-body">
         <p style="font-size:14px;color:#6b5b95;margin:0">
-          ${todayData.isWeekend ? "✨ <em>Weekend mode active — showing Monday's class line-up for your schedule preview:</em>" : `You have <strong>${todaySessions.length} classes</strong> scheduled today (${todayData.dayName}). Let's plan your day.`}
+          ${todayData.isWeekend ? "<em>Weekend schedule preview: showing Monday's classes.</em>" : `You have <strong>${todaySessions.length} classes</strong> scheduled today (${todayData.dayName}). Let's plan your day.`}
         </p>
 
         <div style="display:flex;flex-direction:column;gap:10px">
@@ -97,16 +97,16 @@ function renderCurrentStep() {
             return `
               <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#f9f6ff;border:1.5px solid #ede9fe;border-radius:14px">
                 <div style="display:flex;align-items:center;gap:12px">
-                  <span style="font-size:20px">${idx === 0 ? "1️⃣" : idx === 1 ? "2️⃣" : "3️⃣"}</span>
+                  <span style="font-size:14px;font-weight:700">${idx + 1}</span>
                   <div>
                     <div style="font-weight:700;font-size:14px;color:#2e1065">${escapeHtml(course.name)}</div>
-                    <div style="font-size:12px;color:#7c6999">⏰ ${s.startTime}–${s.endTime} · 📍 ${s.room}</div>
+                    <div style="font-size:12px;color:#7c6999">${s.startTime}–${s.endTime} · Room ${s.room}</div>
                   </div>
                 </div>
                 <span class="badge badge--${status}">${percent}%</span>
               </div>
             `;
-          }).join("") : `<div style="text-align:center;padding:24px;color:#7c6999">No classes scheduled today! Enjoy your break ✨</div>`}
+          }).join("") : `<div style="text-align:center;padding:24px;color:#7c6999">No classes scheduled today.</div>`}
         </div>
 
         <div class="daily-characters-row">
@@ -154,12 +154,12 @@ function renderCurrentStep() {
         <div class="daily-class-card">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
             <div>
-              <div style="font-size:13px;color:#7c6999">⏰ ${session.startTime} – ${session.endTime} (${session.room})</div>
-              <div style="font-size:13px;color:#7c6999">👤 ${escapeHtml(course.instructor)} · ${course.credits} Credits</div>
+              <div style="font-size:13px;color:#7c6999">${session.startTime} – ${session.endTime} · ${escapeHtml(session.room)}</div>
+              <div style="font-size:13px;color:#7c6999">${escapeHtml(course.instructor)} · ${course.credits} credits</div>
             </div>
             <div style="text-align:right">
               <span style="font-size:12px;font-weight:700;color:${skips > 0 ? '#10b981' : '#ef4444'}">
-                ${skips > 0 ? `✓ ${skips} safe skip${skips > 1 ? 's' : ''} left` : '⚠ No skips left'}
+                ${skips > 0 ? `${skips} safe skip${skips > 1 ? 's' : ''} left` : 'No skips left'}
               </span>
             </div>
           </div>
@@ -170,10 +170,10 @@ function renderCurrentStep() {
 
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px" id="daily-choice-buttons">
             <button class="btn btn--mint btn--lg" onclick="window.dailyChoose(${classIndex}, true)">
-              ✅ Yes, attend
+              Yes, attend
             </button>
             <button class="btn btn--danger btn--lg" onclick="window.dailyChoose(${classIndex}, false)">
-              ❌ No, skip
+              No, skip
             </button>
           </div>
         </div>
@@ -209,7 +209,7 @@ function renderCurrentStep() {
           Today's Attendance Plan
         </div>
         <h2 style="font-size:20px;font-weight:800;color:#2e1065;margin:4px 0 0">
-          Ready to save your plan, ${studentName}! 🎉
+          Review your plan, ${studentName}.
         </h2>
       </div>
       <button class="btn btn--ghost btn--sm" onclick="window.closeDailyFlowModal()">✕</button>
@@ -219,26 +219,26 @@ function renderCurrentStep() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div style="background:#ecfdf5;border:1.5px solid #a7f3d0;border-radius:16px;padding:16px;text-align:center">
           <div style="font-size:24px;font-weight:800;color:#047857">${attendingCount}</div>
-          <div style="font-size:12px;font-weight:700;color:#065f46">Attending ✅</div>
+          <div style="font-size:12px;font-weight:700;color:#065f46">Attending</div>
         </div>
         <div style="background:#fff1f2;border:1.5px solid #fecdd3;border-radius:16px;padding:16px;text-align:center">
           <div style="font-size:24px;font-weight:800;color:#be123c">${skippingCount}</div>
-          <div style="font-size:12px;font-weight:700;color:#9f1239">Skipping ❌</div>
+          <div style="font-size:12px;font-weight:700;color:#9f1239">Skipping</div>
         </div>
       </div>
 
       <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">
-        ${todaySessions.map((s) => {
+        ${todaySessions.map((s, index) => {
           const course = s.course;
-          const isAttending = plannedDecisions[s.courseId] !== false;
+          const isAttending = plannedDecisions[index] !== false;
           return `
             <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#ffffff;border:1px solid #e9d5ff;border-radius:12px">
               <div>
                 <span style="font-weight:700;font-size:13px;color:#2e1065">${escapeHtml(course.code)} · ${escapeHtml(course.name)}</span>
-                <span style="font-size:11px;color:#7c6999;display:block">⏰ ${s.startTime}–${s.endTime}</span>
+                <span style="font-size:11px;color:#7c6999;display:block">${s.startTime}–${s.endTime}</span>
               </div>
               <span class="badge badge--${isAttending ? 'safe' : 'danger'}">
-                ${isAttending ? '✅ Attending' : '❌ Skipping'}
+                ${isAttending ? 'Attending' : 'Skipping'}
               </span>
             </div>
           `;
@@ -248,7 +248,7 @@ function renderCurrentStep() {
       <div class="daily-characters-row">
         <img src="swetha.png" class="daily-char-avatar" alt="Prof. Maya" />
         <div class="daily-speech-bubble">
-          <strong>Prof. Maya:</strong> Remember: only real attendance counts. Clicking <em>Confirm & Mark Attendance</em> will record these directly into your student file!
+          <strong>Prof. Maya:</strong> This is only a plan. Attendance is recorded automatically after each scheduled class ends.
         </div>
       </div>
     </div>
@@ -256,7 +256,7 @@ function renderCurrentStep() {
     <div class="daily-flow-footer">
       <button class="btn btn--ghost" onclick="window.dailyFlowPrev()">← Review Plan</button>
       <button class="btn btn--primary btn--lg" onclick="window.dailyCommitPlan()">
-        ✨ Confirm & Mark Attendance
+        Finish today's plan
       </button>
     </div>
   `;
@@ -274,7 +274,7 @@ window.dailyChoose = function(classIndex, willAttend) {
   const buttonsZone = document.getElementById("daily-choice-buttons");
 
   if (willAttend) {
-    plannedDecisions[session.courseId] = true;
+    plannedDecisions[classIndex] = true;
 
     if (reactionZone) {
       reactionZone.innerHTML = `
@@ -290,7 +290,7 @@ window.dailyChoose = function(classIndex, willAttend) {
     if (buttonsZone) {
       buttonsZone.innerHTML = `
         <button class="btn btn--mint btn--lg" style="grid-column:1 / -1" onclick="window.dailyFlowNext()">
-          Attending Recorded! Next Class →
+          Plan set. Next class →
         </button>
       `;
     }
@@ -310,11 +310,11 @@ window.dailyChoose = function(classIndex, willAttend) {
       `;
 
       buttonsZone.innerHTML = `
-        <button class="btn btn--accent" onclick="window.dailyConfirmSkip('${session.courseId}', true)">
-          Confirm Skip 😈
+        <button class="btn btn--accent" onclick="window.dailyConfirmSkip(${classIndex})">
+          Add skip to plan
         </button>
         <button class="btn btn--mint" onclick="window.dailyChoose(${classIndex}, true)">
-          Actually, I'll Attend 📚
+          I'll attend instead
         </button>
       `;
     } else {
@@ -325,7 +325,7 @@ window.dailyChoose = function(classIndex, willAttend) {
           <div class="daily-speech-bubble" style="border-color:#fca5a5;background:#fff5f5">
             <strong style="color:#b91c1c">Prof. Maya:</strong>
             <span style="font-size:15px;font-weight:800;display:block;margin:4px 0;color:#991b1b">
-              ABSOLUTELY NOT! 😠
+              Attendance would fall below the required 75%.
             </span>
             Skipping drops your attendance to <strong style="color:#dc2626">${prediction.percent}%</strong>, which is <em>BELOW</em> the mandatory 75% requirement!
             You will face attendance detention. ATTEND THIS CLASS!
@@ -335,18 +335,18 @@ window.dailyChoose = function(classIndex, willAttend) {
 
       buttonsZone.innerHTML = `
         <button class="btn btn--mint btn--lg" onclick="window.dailyChoose(${classIndex}, true)">
-          ✅ Okay, I'll Attend (Smart Choice)
+          I'll attend
         </button>
-        <button class="btn btn--ghost btn--sm" style="color:#dc2626" onclick="window.dailyConfirmSkip('${session.courseId}', false)">
-          ⚠️ Skip Anyway (Risk Detention)
+        <button class="btn btn--ghost btn--sm" style="color:#dc2626" onclick="window.dailyConfirmSkip(${classIndex})">
+          Add skip to plan anyway
         </button>
       `;
     }
   }
 };
 
-window.dailyConfirmSkip = function(courseId, isSafe) {
-  plannedDecisions[courseId] = false;
+window.dailyConfirmSkip = function(classIndex) {
+  plannedDecisions[classIndex] = false;
   window.dailyFlowNext();
 };
 
@@ -366,29 +366,9 @@ window.closeDailyFlowModal = function() {
   closeDailyFlow();
 };
 
-window.dailyCommitPlan = async function() {
-  const card = document.getElementById("daily-flow-card");
-  if (card) {
-    card.innerHTML = `
-      <div style="padding:48px;text-align:center">
-        <div style="font-size:36px;margin-bottom:16px">⏳</div>
-        <div style="font-size:18px;font-weight:800;color:#2e1065">Saving today's attendance plan...</div>
-        <div style="font-size:13px;color:#7c6999;margin-top:6px">Synchronizing records with your student profile</div>
-      </div>
-    `;
+window.dailyCommitPlan = function() {
+  closeDailyFlow();
+  if (typeof onPlanCompleteCallback === "function") {
+    onPlanCompleteCallback(plannedDecisions);
   }
-
-  // Commit each decision
-  for (const session of todaySessions) {
-    const isPresent = plannedDecisions[session.courseId] !== false;
-    await markAttendance(session.courseId, isPresent);
-  }
-
-  // Finished!
-  setTimeout(() => {
-    closeDailyFlow();
-    if (typeof onPlanCompleteCallback === "function") {
-      onPlanCompleteCallback(plannedDecisions);
-    }
-  }, 900);
 };

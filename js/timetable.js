@@ -4,9 +4,13 @@
 //  Fully integrated with logic.js and backend server.
 // ============================================================
 import { COURSES, TIMETABLE, DAYS, escapeHtml, getCourse } from "./data.js";
-import { getAttendance, getStatus, getSafeSkips, predictSkip, classesNeeded, markAttendance, syncState } from "./logic.js";
+import { getAttendance, getStatus, getSafeSkips, predictSkip, classesNeeded, getSessionId, markAttendance, syncState } from "./logic.js";
 import { startClock }                          from "./clock.js";
 import { startNotifications }                  from "./notify.js";
+import {
+  getAttendancePlan, getScheduledClass, getStudentProfile, removeAttendancePlan,
+  saveAttendancePlan,
+} from "./storage.js";
 
 // ── State ──────────────────────────────────────────────────────
 const today       = new Date();
@@ -14,17 +18,12 @@ const rawDay      = today.getDay();             // 0=Sun, 1=Mon … 6=Sat
 const todayIdx    = rawDay === 0 ? -1 : rawDay - 1; // Mon=0 … Fri=4, weekend=-1
 let   selectedDay = todayIdx >= 0 && todayIdx <= 4 ? todayIdx : 0;
 
-// Course emoji map
-const COURSE_EMOJI = {
-  CS301: "🧩", DS365: "💻", CS351: "🛠️",
-  DS304: "🤖", EC354: "⚡",
-};
-
-// Status emoji
-const STATUS_EMOJI = { safe: "✅", warning: "⚠️", danger: "🚨" };
-
 // ── Boot ───────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
+  if (!getStudentProfile()) {
+    window.location.replace("index.html");
+    return;
+  }
   // Live clock
   startClock("navbar-clock");
   startNotifications();
@@ -39,10 +38,27 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderAll();
   bindPanel();
   animateIn(".schedule-item");
-
-  // Sync with backend server (survives refreshes & multi-tab)
   await syncState();
   renderAll();
+
+  const profile = getStudentProfile();
+  document.getElementById("timetable-student-name").textContent = profile.name;
+  document.getElementById("timetable-student-roll").textContent = profile.rollNumber;
+  document.getElementById("refresh-attendance")?.addEventListener("click", () => window.location.reload());
+  const requestedCourse = new URLSearchParams(window.location.search).get("course");
+  if (requestedCourse) {
+    const slot = TIMETABLE.find(item => item.courseId === requestedCourse);
+    if (slot) {
+      selectedDay = slot.day;
+      renderAll();
+      const sessionId = getSessionId(getMondayOf(today).setDate(getMondayOf(today).getDate() + slot.day), slot);
+      window.openDetail(slot.courseId, sessionId);
+    }
+  }
+  setInterval(async () => {
+    await syncState();
+    renderAll();
+  }, 30_000);
 });
 
 function renderAll() {
@@ -58,20 +74,21 @@ function renderStats() {
   if (!el) return;
 
   const weekTotal   = TIMETABLE.length;
-  const todayCls    = TIMETABLE.filter(s => s.day === todayIdx).length;
+  const now = new Date();
+  const todayCls = TIMETABLE.filter(slot => slot.day === todayIdx &&
+    makeDateTime(now, slot.endTime) <= now).length;
   const safeCount   = COURSES.filter(c => getStatus(c.id) === "safe").length;
   const dangerCount = COURSES.filter(c => getStatus(c.id) === "danger").length;
 
   const stats = [
-    { icon: "📚", value: weekTotal,   label: "Classes/Week",  color: "var(--clr-primary-dark)" },
-    { icon: "☀️", value: todayCls,    label: "Today",         color: "var(--clr-accent-dark)" },
-    { icon: "✅", value: safeCount,   label: "Safe Subjects", color: "var(--clr-safe-text)" },
-    { icon: "🚨", value: dangerCount, label: "Need Rescue",   color: "var(--clr-danger-text)" },
+    { value: weekTotal,   label: "Classes/week",  color: "var(--clr-primary-dark)" },
+    { value: todayCls,    label: "Classes finished today", color: "var(--clr-accent-dark)" },
+    { value: safeCount,   label: "Safe subjects", color: "var(--clr-safe-text)" },
+    { value: dangerCount, label: "At risk",       color: "var(--clr-danger-text)" },
   ];
 
   el.innerHTML = stats.map(s => `
     <div class="stat-card" style="--stat-color:${s.color}">
-      <div class="stat-card__icon">${s.icon}</div>
       <div class="stat-card__value">${s.value}</div>
       <div class="stat-card__label">${s.label}</div>
     </div>
@@ -141,19 +158,20 @@ function renderGrid() {
       const isToday = dayIdx === todayIdx;
 
       if (sess) {
+        const classDate = new Date(monday);
+        classDate.setDate(monday.getDate() + dayIdx);
+        const sessionId = getSessionId(classDate, sess);
         const course = getCourse(sess.courseId);
         const status = getStatus(sess.courseId);
         const { percent } = getAttendance(sess.courseId);
         const isLab = mins(sess.endTime) - mins(sess.startTime) >= 90;
-        const emoji = COURSE_EMOJI[sess.courseId] || "📖";
-
         html += `
           <div class="grid-cell${isToday ? " today-col" : ""}">
             <div class="class-card"
                  style="background:${course.color}20; border-color:${course.color}60;"
-                 onclick="window.openDetail('${sess.courseId}')">
+                 onclick="window.openDetail('${sess.courseId}', '${sessionId}')">
               <div>
-                <div class="cc-code" style="color:${course.color}">${emoji} ${escapeHtml(course.code)}</div>
+                <div class="cc-code" style="color:${course.color}">${escapeHtml(course.code)}</div>
                 <div class="cc-name">${escapeHtml(course.name)}</div>
               </div>
               <div class="cc-foot">
@@ -207,33 +225,35 @@ function renderDaySchedule(dayIdx) {
   if (!sessions.length) {
     listEl.innerHTML = `
       <div class="empty-day">
-        <div class="empty-day__emoji">🎉</div>
-        <div class="empty-day__title">No classes scheduled on ${DAYS[dayIdx]}!</div>
-        <div class="empty-day__sub">Enjoy your free time or catch up on revision ✨</div>
+        <div class="empty-day__title">No classes scheduled on ${DAYS[dayIdx]}.</div>
+        <div class="empty-day__sub">Use the time to rest or catch up on revision.</div>
       </div>`;
     return;
   }
 
-  listEl.innerHTML = sessions.map(s => buildItem(s)).join("");
+  const monday = getMondayOf(today);
+  const classDate = new Date(monday);
+  classDate.setDate(monday.getDate() + dayIdx);
+  listEl.innerHTML = sessions.map(s => buildItem(s, classDate)).join("");
 }
 
-function buildItem(sess) {
+function buildItem(sess, classDate) {
   const course  = getCourse(sess.courseId);
+  const sessionId = getSessionId(classDate, sess);
+  const plannedAttendance = getAttendancePlan(sessionId);
   const status  = getStatus(sess.courseId);
   const { percent, attended, total } = getAttendance(sess.courseId);
   const skips   = getSafeSkips(sess.courseId);
   const isLab   = mins(sess.endTime) - mins(sess.startTime) >= 90;
-  const emoji   = COURSE_EMOJI[sess.courseId] || "📖";
-  const se      = STATUS_EMOJI[status];
 
   const skipMsg = skips > 0
     ? `<span style="color:var(--clr-safe-text)">✓ ${skips} safe skip${skips>1?"s":""} remaining</span>`
-    : `<span style="color:var(--clr-danger-text)">⚠ Cannot skip any class</span>`;
+    : `<span style="color:var(--clr-danger-text)">No skips available</span>`;
 
   return `
     <div class="schedule-item"
          style="--item-color:${course.color}"
-         onclick="window.openDetail('${sess.courseId}')">
+         onclick="window.openDetail('${sess.courseId}', '${sessionId}')">
 
       <!-- Time column -->
       <div class="si-time">
@@ -245,17 +265,18 @@ function buildItem(sess) {
       <div class="si-body">
         <div class="si-top">
           <div class="si-name">
-            ${emoji} ${escapeHtml(course.name)}
+            ${escapeHtml(course.name)}
             ${isLab ? '<span class="badge badge--info" style="font-size:9px">LAB</span>' : ""}
           </div>
-          <span class="badge badge--${status}">${se} ${status}</span>
+          <span class="badge badge--${status}">${status}</span>
         </div>
 
         <div class="si-meta">
-          <span>🏷 ${escapeHtml(course.code)}</span>
-          <span>👤 ${escapeHtml(course.instructor)}</span>
-          <span>📍 ${sess.room}</span>
-          <span>💎 ${course.credits} Credits</span>
+          <span>${escapeHtml(course.code)}</span>
+          <span>${escapeHtml(course.instructor)}</span>
+          <span>Room ${escapeHtml(sess.room)}</span>
+          <span>${course.credits} credits</span>
+          ${plannedAttendance === null ? "" : `<span>Plan: ${plannedAttendance ? "Attend" : "Skip"}</span>`}
         </div>
 
         <div class="si-attendance">
@@ -279,14 +300,21 @@ function bindPanel() {
   });
 }
 
-window.openDetail = function(courseId) {
+window.openDetail = function(courseId, sessionId = null) {
   const course  = getCourse(courseId);
   if (!course) return;
+  const scheduledClass = sessionId ? getScheduledClass(sessionId) : null;
+  const plannedAttendance = sessionId ? getAttendancePlan(sessionId) : null;
+  const sessionDate = sessionId?.slice(0, 10);
+  const scheduledFor = sessionId && sessionDate
+    ? makeDateTime(new Date(`${sessionDate}T00:00:00`), getSlotBySessionId(sessionId)?.endTime || "00:00")
+    : null;
+  const hasEnded = scheduledClass !== null ||
+    (scheduledFor !== null && scheduledFor <= new Date());
 
   const status  = getStatus(courseId);
   const { percent, attended, total } = getAttendance(courseId);
   const skips   = getSafeSkips(courseId);
-  const emoji   = COURSE_EMOJI[courseId] || "📖";
 
   const statusClr = {
     safe: "var(--clr-safe-text)",
@@ -294,7 +322,6 @@ window.openDetail = function(courseId) {
     danger: "var(--clr-danger-text)"
   }[status];
 
-  const se = STATUS_EMOJI[status];
 
   const skipText = skips > 0
     ? `<span style="color:var(--clr-safe-text);font-weight:700">✓ ${skips} class${skips>1?"es":""}</span>`
@@ -304,7 +331,6 @@ window.openDetail = function(courseId) {
     <div class="sheet-handle"></div>
     <div class="sheet-color-bar" style="background:${course.color}"></div>
 
-    <div style="font-size:2.5rem;margin-bottom:var(--space-2)">${emoji}</div>
     <div class="sheet-title">${escapeHtml(course.name)}</div>
     <div class="sheet-code">${escapeHtml(course.code)} · ${course.credits} Credits · ${escapeHtml(course.instructor)}</div>
 
@@ -312,7 +338,7 @@ window.openDetail = function(courseId) {
     <div class="sheet-att-box">
       <div class="sheet-att-top">
         <div class="sheet-att-pct" style="color:${statusClr}">${percent}%</div>
-        <span class="badge badge--${status}" style="font-size:var(--fs-sm)">${se} ${status.toUpperCase()}</span>
+        <span class="badge badge--${status}" style="font-size:var(--fs-sm)">${status.toUpperCase()}</span>
       </div>
       <div class="progress" style="height:10px;margin-bottom:var(--space-3)">
         <div class="progress__bar progress__bar--${status}" style="width:${percent}%"></div>
@@ -336,7 +362,7 @@ window.openDetail = function(courseId) {
       <div class="sheet-row">
         <span class="sheet-row-key">Recovery Plan</span>
         <span class="sheet-row-val" style="color:${statusClr}">
-          ${classesNeeded(courseId) === 0 ? "Already safe 🎉" : `Attend next ${classesNeeded(courseId)} consecutive class${classesNeeded(courseId) > 1 ? "es" : ""}`}
+          ${classesNeeded(courseId) === 0 ? "Already at the required level" : `Attend next ${classesNeeded(courseId)} consecutive class${classesNeeded(courseId) > 1 ? "es" : ""}`}
         </span>
       </div>
     </div>
@@ -344,26 +370,51 @@ window.openDetail = function(courseId) {
     <!-- Skip Predictor for this class -->
     <div style="background:var(--clr-surface-2);border:1.5px solid var(--clr-border-soft);border-radius:var(--radius-xl);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4);display:flex;align-items:center;justify-content:space-between;gap:var(--space-2)">
       <div style="font-size:var(--fs-xs)">
-        <span style="font-weight:700;color:var(--clr-text);display:block">🔮 What if I skip this class?</span>
+        <span style="font-weight:700;color:var(--clr-text);display:block">If you miss this class</span>
         <span style="color:var(--clr-text-muted)">Drops from ${percent}% to <strong style="color:var(--clr-${predictSkip(courseId, 1).status}-text)">${predictSkip(courseId, 1).percent}%</strong></span>
       </div>
       <span class="badge badge--${predictSkip(courseId, 1).isSafe ? 'safe' : 'danger'}" style="font-size:10px">
-        ${predictSkip(courseId, 1).isSafe ? '✓ Safe to skip' : '⚠ Danger'}
+        ${predictSkip(courseId, 1).isSafe ? 'Safe to skip' : 'Attendance risk'}
       </span>
     </div>
 
-    <div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-4)">
-      <button class="btn btn--mint btn--sm" style="flex:1" onclick="window.quickMark('${courseId}', true)">
-        ✅ Mark Present
-      </button>
-      <button class="btn btn--danger btn--sm" style="flex:1" onclick="window.quickMark('${courseId}', false)">
-        ❌ Mark Absent
-      </button>
-    </div>
+    ${hasEnded ? `
+      <div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-4)">
+        <button class="btn btn--mint btn--sm" style="flex:1" onclick="window.quickMark('${courseId}', true, '${sessionId}')">
+          Mark present
+        </button>
+        <button class="btn btn--danger btn--sm" style="flex:1" onclick="window.quickMark('${courseId}', false, '${sessionId}')">
+          Mark absent
+        </button>
+      </div>
+      <p style="font-size:var(--fs-xs);color:var(--clr-text-muted)">This class has ended. Your mark can be changed without adding another class.</p>
+    ` : sessionId ? `
+      <div style="margin-bottom:var(--space-4);padding:var(--space-3);border:1px solid var(--clr-border-soft);border-radius:var(--radius-lg)">
+        <div style="font-weight:700;font-size:var(--fs-sm);margin-bottom:var(--space-2)">Your plan for this class</div>
+        <div style="font-size:var(--fs-xs);color:var(--clr-text-muted);margin-bottom:var(--space-3)">
+          ${plannedAttendance === null
+            ? "Choose Attend or Skip. This saves your plan only; attendance is recorded after class ends."
+            : `Plan saved: ${plannedAttendance ? "Attend" : "Skip"}. You can change it here.`}
+        </div>
+        <div style="display:flex;gap:var(--space-2)">
+          <button class="btn btn--mint btn--sm" style="flex:1" onclick="event.stopPropagation(); window.saveClassPlan('${sessionId}', true)">
+            ${plannedAttendance === true ? "Planned: Attend" : "Plan to attend"}
+          </button>
+          <button class="btn btn--danger btn--sm" style="flex:1" onclick="event.stopPropagation(); window.saveClassPlan('${sessionId}', false)">
+            ${plannedAttendance === false ? "Planned: Skip" : "Plan to skip"}
+          </button>
+        </div>
+        ${plannedAttendance === null ? "" : `<button class="btn btn--ghost btn--sm" style="width:100%;margin-top:var(--space-2)" onclick="event.stopPropagation(); window.clearClassPlan('${sessionId}')">Clear plan</button>`}
+      </div>
+    ` : `
+      <p style="font-size:var(--fs-xs);color:var(--clr-text-muted);margin-bottom:var(--space-4)">
+        Select a scheduled class to plan attendance or mark it after it ends.
+      </p>
+    `}
 
     <div class="sheet-actions">
       <a href="tracker.html?course=${courseId}" class="btn btn--primary" style="flex:1">
-        📋 Open in Tracker
+        Open tracker
       </a>
       <button class="btn btn--ghost" style="flex:0 0 auto" onclick="window.closeDetail()">Close</button>
     </div>
@@ -372,11 +423,31 @@ window.openDetail = function(courseId) {
   document.getElementById("detail-panel").classList.add("open");
 };
 
-window.quickMark = async function(courseId, present) {
-  await markAttendance(courseId, present);
+window.saveClassPlan = function(sessionId, willAttend) {
+  saveAttendancePlan(sessionId, willAttend);
   renderAll();
-  window.openDetail(courseId); // refresh open sheet
+  window.openDetail(sessionId.split("_").at(-1), sessionId);
 };
+
+window.clearClassPlan = function(sessionId) {
+  removeAttendancePlan(sessionId);
+  renderAll();
+  window.openDetail(sessionId.split("_").at(-1), sessionId);
+};
+
+window.quickMark = async function(courseId, present, sessionId) {
+  const session = getScheduledClass(sessionId);
+  if (!session) return;
+  await markAttendance(courseId, present, session);
+  renderAll();
+  window.openDetail(courseId, sessionId);
+};
+
+function getSlotBySessionId(sessionId) {
+  const courseId = sessionId.split("_").at(-1);
+  const startTime = sessionId.slice(11, 16);
+  return TIMETABLE.find(slot => slot.courseId === courseId && slot.startTime === startTime);
+}
 
 window.closeDetail = function() {
   document.getElementById("detail-panel")?.classList.remove("open");
@@ -412,4 +483,11 @@ function getMondayOf(date) {
   d.setDate(d.getDate() + diff);
   d.setHours(0,0,0,0);
   return d;
+}
+
+function makeDateTime(date, time) {
+  const [hours, minutes] = time.split(":").map(Number);
+  const result = new Date(date);
+  result.setHours(hours, minutes, 0, 0);
+  return result;
 }

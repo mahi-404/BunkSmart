@@ -9,29 +9,20 @@ import {
 } from "./data.js";
 import {
   getAttendance, getStatus, getSafeSkips, predictSkip,
-  markAttendance, classesNeeded, syncState, undoAttendance
+  classesNeeded, syncState
 } from "./logic.js";
 import {
-feature/daily-attendance-flow
-  clearAll as clearStorage, loadAttendanceLog, saveAttendanceLog,
-  getStudentProfile, exportAttendanceCSV
-
-  clearAll as clearStorage, loadAttendanceLog, saveAttendanceLog, syncCoursesFromServer,
-main
+ clearAll as clearStorage, loadAttendanceLog, saveAttendanceLog,
+ getScheduledClasses, getStudentProfile, exportAttendanceCSV
 } from "./storage.js";
 import { startClock } from "./clock.js";
 import { initDailyFlow, openDailyFlow } from "./dailyFlow.js";
 
 // ── Emoji map ──────────────────────────────────────────────────
-const EMOJI = {
-  CS301: "🧩", DS365: "💻", CS351: "🛠️",
-  DS304: "🤖", EC354: "⚡",
-};
-
 const STATUS_MSG = {
-  safe:    ["You're safe! 🎉", "All good — keep it up!", "Attendance on point ✅"],
-  warning: ["Getting close ⚠️", "Don't skip anymore!", "Tread carefully 🚶"],
-  danger:  ["SOS mode 🚨", "Attend EVERY class!", "Detention risk is active!"],
+  safe: "Attendance is at or above the required threshold.",
+  warning: "Attendance is below the required threshold. Avoid further absences.",
+  danger: "Attendance is low. Attend upcoming classes to recover.",
 };
 
 // Log store
@@ -46,16 +37,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   const profile = getStudentProfile();
   const nameEl = document.getElementById("student-name-display");
   const rollEl = document.getElementById("student-roll-display");
-  if (profile) {
-    if (nameEl) nameEl.textContent = profile.name;
-    if (rollEl) rollEl.textContent = profile.rollNumber;
+  if (!profile) {
+    window.location.replace("index.html");
+    return;
   }
+  if (nameEl) nameEl.textContent = profile.name;
+  if (rollEl) rollEl.textContent = profile.rollNumber;
+  document.getElementById("refresh-attendance")?.addEventListener("click", () => window.location.reload());
+  const storyNameEl = document.getElementById("story-student-name");
+  if (storyNameEl) storyNameEl.textContent = profile.name;
 
   // Initialize Daily Flow
   initDailyFlow(async () => {
-    showToast("Today's Plan Saved! ✨", "Attendance updated successfully.", "safe");
-    await syncState();
-    refreshAll();
+    showToast("Plan complete", "Attendance will be recorded after each scheduled class ends.", "info");
   });
 
   try {
@@ -69,12 +63,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderStory();
   bindCourseForm();
 
-  // Fresh sync from server (survives refreshes & multi-tab edits)
-  await syncCoursesFromServer();
   await syncState();
   renderSummary();
   renderCards();
   renderStory();
+  setInterval(async () => {
+    await syncState();
+    refreshAll();
+  }, 30_000);
 
   // Pre-select course from URL ?course=CS301
   const params = new URLSearchParams(window.location.search);
@@ -109,14 +105,13 @@ function renderSummary() {
   const total   = COURSES.reduce((s, c) => s + getAttendance(c.id).total, 0);
 
   el.innerHTML = [
-    { icon: "📚", val: COURSES.length, lbl: "Subjects",     color: "var(--clr-primary-dark)" },
-    { icon: "✅", val: safe,           lbl: "Safe",         color: "var(--clr-safe-text)" },
-    { icon: "⚠️", val: warning,        lbl: "Warning",      color: "var(--clr-warning-text)" },
-    { icon: "🚨", val: danger,         lbl: "Danger",       color: "var(--clr-danger-text)" },
-    { icon: "🗓", val: total,          lbl: "Total Marked", color: "var(--clr-primary-dark)" },
+    { val: COURSES.length, lbl: "Subjects",     color: "var(--clr-primary-dark)" },
+    { val: safe,           lbl: "Safe",         color: "var(--clr-safe-text)" },
+    { val: warning,        lbl: "Warning",      color: "var(--clr-warning-text)" },
+    { val: danger,         lbl: "Danger",       color: "var(--clr-danger-text)" },
+    { val: total,          lbl: "Total marked", color: "var(--clr-primary-dark)" },
   ].map(s => `
     <div class="stat-card" style="--stat-color:${s.color}">
-      <div class="stat-card__icon">${s.icon}</div>
       <div class="stat-card__value">${s.val}</div>
       <div class="stat-card__label">${s.lbl}</div>
     </div>`).join("");
@@ -136,8 +131,6 @@ function buildCard(course) {
   const status  = getStatus(course.id);
   const skips   = getSafeSkips(course.id);
   const needed  = classesNeeded(course.id);
-  const emoji   = EMOJI[course.id] || "📖";
-
   // SVG ring
   const r  = 28;
   const circ = 2 * Math.PI * r;
@@ -148,16 +141,15 @@ function buildCard(course) {
 
   const skipInfo = skips > 0
     ? `<span style="color:var(--clr-safe-text);font-weight:700">✓ ${skips} skip${skips > 1 ? "s" : ""} left</span>`
-    : `<span style="color:var(--clr-danger-text);font-weight:700">⚠ No skips allowed</span>`;
+    : `<span style="color:var(--clr-danger-text);font-weight:700">No skips available</span>`;
 
   const needInfo = needed > 0
     ? `Need <strong style="color:var(--clr-${status}-text)">${needed}</strong> to reach 75%`
     : total === 0
       ? `<span style="color:var(--clr-text-muted)">Start attending to build your record</span>`
-      : `<span style="color:var(--clr-safe-text);font-weight:700">Already at 75%+ 🎉</span>`;
+      : `<span style="color:var(--clr-safe-text);font-weight:700">At or above 75%</span>`;
 
-  const msgs = STATUS_MSG[status];
-  const funMsg = msgs[Math.floor(Math.random() * msgs.length)];
+  const statusMessage = STATUS_MSG[status];
   const isDanger = status === "danger";
 
   return `
@@ -165,15 +157,14 @@ function buildCard(course) {
 
       <div class="cc-header">
         <div class="cc-header-left">
-          <div class="cc-emoji">${emoji}</div>
           <div class="cc-title">${escapeHtml(course.name)}</div>
           <div class="cc-meta">
-            <span>🏷 ${escapeHtml(course.code)}</span>
-            <span>💎 ${course.credits} Credits</span>
-            ${isDanger ? '<span class="danger-tag">🚨 DANGER ZONE</span>' : ''}
+            <span>${escapeHtml(course.code)}</span>
+            <span>${course.credits} credits</span>
+            ${isDanger ? '<span class="danger-tag">DANGER</span>' : ''}
           </div>
           <div style="font-size:var(--fs-xs);color:var(--clr-text-muted);margin-top:var(--space-1)">
-            👤 ${escapeHtml(course.instructor)}
+            ${escapeHtml(course.instructor)}
           </div>
         </div>
 
@@ -219,32 +210,19 @@ function buildCard(course) {
 
       <!-- Status advisory -->
       <div style="padding:0 var(--space-5) var(--space-3);font-size:var(--fs-xs);color:var(--clr-text-muted);font-style:italic">
-        ${funMsg}
+        ${statusMessage}
       </div>
 
-      <!-- Mark buttons -->
-      <div class="cc-actions">
-        <button class="mark-btn mark-btn--present"
-                onclick="window.mark('${course.id}', true)">
-          ✅ Present
-        </button>
-        <button class="mark-btn mark-btn--absent"
-                onclick="window.mark('${course.id}', false)">
-          ❌ Absent
-        </button>
-      </div>
-
-      <!-- "What if I skip?" -->
       <div style="padding:0 var(--space-5) var(--space-4)">
         <button class="skip-predict-btn"
                 onclick="window.openPredict('${course.id}')">
-          🔮 What if I skip next class?
+          Preview an absence
         </button>
       </div>
 
       <div class="cc-manage">
-        <button type="button" onclick="window.editCourse('${course.id}')">✏️ Edit</button>
-        <button type="button" onclick="window.removeCourse('${course.id}')">🗑 Delete</button>
+        <button type="button" onclick="window.editCourse('${course.id}')">Edit</button>
+          <button type="button" onclick="window.removeCourse('${course.id}')">Delete</button>
       </div>
 
     </div>`;
@@ -272,13 +250,14 @@ function renderStory(outcome = "") {
   const status = getStatus(course.id);
   const skips = getSafeSkips(course.id);
   const afterSkip = predictSkip(course.id);
-  const alex = document.getElementById("story-alex");
+  const student = document.getElementById("story-alex");
   const trace = document.getElementById("story-trace");
   const maya = document.getElementById("story-maya");
-  if (!alex || !trace || !maya) return;
+  if (!student || !trace || !maya) return;
+  const studentName = getStudentProfile()?.name || "Student";
 
   if (outcome === "ask") {
-    alex.textContent = `Should I skip ${course.name}? I could really use a break…`;
+    student.textContent = `${studentName}: Should I skip ${course.name}? I could really use a break.`;
     trace.textContent = skips > 0
       ? `You have ${skips} safe skip${skips === 1 ? "" : "s"} left. Your attendance will become ${afterSkip}%.`
       : `No skips left. Skipping drops you to ${afterSkip}%, which is risky.`;
@@ -286,27 +265,27 @@ function renderStory(outcome = "") {
       ? "You are safe, but staying consistent protects you against surprise quizzes."
       : "You are already walking a thin line. I expect to see you in the lecture hall.";
   } else if (outcome === "predict") {
-    alex.textContent = `If I miss ${course.code}, what happens to my record?`;
+    student.textContent = `${studentName}: If I miss ${course.code}, what happens to my record?`;
     trace.textContent = `Attendance moves from ${percent}% down to ${afterSkip}%. Status will be ${afterSkip >= 75 ? "SAFE" : afterSkip >= 60 ? "WARNING" : "DANGER"}.`;
     maya.textContent = afterSkip >= 75
       ? "Mathematically acceptable, but don't make skipping a habit."
       : "That choice pushes you directly toward attendance detention.";
   } else if (outcome === "present") {
-    alex.textContent = `Marked present for ${course.code}! That feels good.`;
+    student.textContent = `${studentName}: Marked present for ${course.code}.`;
     trace.textContent = `Record logged! Attendance updated to ${percent}%.`;
     maya.textContent = status === "safe"
       ? "Good discipline. Keep this standard until end of semester."
       : `Good recovery step. You still need more regular attendance to become fully safe.`;
   } else if (outcome === "absent") {
-    alex.textContent = `Marked absent for ${course.code}. Now I need to know the damage.`;
+    student.textContent = `${studentName}: Marked absent for ${course.code}.`;
     trace.textContent = `Down to ${percent}%. Safe skips remaining: ${skips}.`;
     maya.textContent = status === "safe"
       ? "An absence recorded. Keep track of your buffer before it disappears."
       : `You're in danger at ${percent}%. Attend every class until you recover.`;
   } else {
-    alex.textContent = status === "safe"
-      ? `I've got ${course.code} next. Surely one skip is harmless?`
-      : `I want to miss ${course.code}, but I'm not sure I can afford it…`;
+    student.textContent = status === "safe"
+      ? `${studentName}: I've got ${course.code} next. Is one skip harmless?`
+      : `${studentName}: I want to miss ${course.code}, but I'm not sure I can afford it.`;
     trace.textContent = `${percent}% attendance. ${skips} safe skip${skips === 1 ? "" : "s"} left; one skip would make it ${afterSkip}%.`;
     maya.textContent = status === "safe"
       ? "You're above the line for now. I still recommend showing up."
@@ -318,69 +297,12 @@ function renderStory(outcome = "") {
 
 document.getElementById("story-course")?.addEventListener("change", () => renderStory());
 window.storyAsk = () => renderStory("ask");
-window.storyAttend = () => {
-  const course = getCourse(document.getElementById("story-course")?.value);
-  if (course) window.mark(course.id, true);
-};
 window.storyPredict = () => {
   const course = getCourse(document.getElementById("story-course")?.value);
   if (course) {
     renderStory("predict");
     window.openPredict(course.id);
   }
-};
-
-// ── Mark attendance ────────────────────────────────────────────
-window.mark = async function(courseId, present) {
-  // Animate button
-  const btn = document.querySelector(`#card-${courseId} .mark-btn--${present ? "present" : "absent"}`);
-  btn?.classList.add("popped");
-  setTimeout(() => btn?.classList.remove("popped"), 350);
-
-  let res;
-  try {
-    // Send to logic & server
-    res = await markAttendance(courseId, present);
-  } catch (error) {
-    showToast("Couldn't save attendance", error.message, "danger");
-    return;
-  }
-
-  const course = getCourse(courseId);
-  const card = document.getElementById(`card-${courseId}`);
-
-  // If server rejected the mark (e.g. unknown course or constraint violation):
-  if (!res.success) {
-    showToast("Server rejected update", res.error || "Could not save to server", "danger");
-    if (card && course) {
-      card.outerHTML = buildCard(course);
-    }
-    renderSummary();
-    return;
-  }
-
-  // Refresh card & summary
-  if (card && course) {
-    card.outerHTML = buildCard(course);
-  }
-  renderSummary();
-
-  // Log entry
-  addLog(courseId, present);
-
-  // Toast & Storyline
-  const { percent } = getAttendance(courseId);
-  const status = getStatus(courseId);
-  const storySelect = document.getElementById("story-course");
-  if (storySelect) storySelect.value = courseId;
-
-  const storageDestination = res.offline ? "Saved locally (offline)" : "Saved to server";
-  showToast(
-    present ? `✅ Marked present for ${course.code}` : `❌ Marked absent for ${course.code}`,
-    `New Attendance: ${percent}% (${status.toUpperCase()}) · ${storageDestination}`,
-    status
-  );
-  renderStory(present ? "present" : "absent");
 };
 
 // ── Predict modal ──────────────────────────────────────────────
@@ -390,18 +312,16 @@ window.openPredict = function(courseId) {
   const after    = predictSkip(courseId);
   const current  = getAttendance(courseId).percent;
   const newStatus = after >= 75 ? "safe" : after >= 60 ? "warning" : "danger";
-  const emoji     = EMOJI[courseId] || "📖";
   const drop      = current - after;
 
   const verdict = after >= 75
-    ? `<span style="color:var(--clr-safe-text)">✅ Safe to skip! You will stay above 75%.</span>`
+    ? `<span style="color:var(--clr-safe-text)">Safe to skip. You will stay above 75%.</span>`
     : after >= 60
-    ? `<span style="color:var(--clr-warning-text)">⚠️ Warning: Drops to ${after}%. Tread carefully!</span>`
-    : `<span style="color:var(--clr-danger-text)">🚨 Danger: Skipping puts you at ${after}%. DO NOT SKIP!</span>`;
+    ? `<span style="color:var(--clr-warning-text)">Warning: attendance drops to ${after}%. Avoid skipping.</span>`
+    : `<span style="color:var(--clr-danger-text)">Danger: attendance drops to ${after}%. Attend this class.</span>`;
 
   document.getElementById("predict-box-content").innerHTML = `
     <div style="text-align:center;margin-bottom:var(--space-5)">
-      <div style="font-size:2.5rem;margin-bottom:var(--space-3)">${emoji}</div>
       <div style="font-size:var(--fs-lg);font-weight:800;color:var(--clr-text);letter-spacing:-0.02em">
         What if you skip ${escapeHtml(course.code)}?
       </div>
@@ -432,10 +352,9 @@ window.openPredict = function(courseId) {
 
     <div style="display:flex;gap:var(--space-3)">
       <button class="btn btn--ghost" style="flex:1" onclick="window.closePredict()">← Go back</button>
-      <button class="btn btn--${newStatus === 'safe' ? 'accent' : 'primary'}" style="flex:1"
-              onclick="window.mark('${courseId}', ${newStatus === 'safe' ? 'false' : 'true'}); window.closePredict()">
-        ${newStatus === 'safe' ? "Skip anyway 😈" : "Attend class 📚"}
-      </button>
+      <a class="btn btn--primary" style="flex:1;text-align:center" href="timetable.html">
+        Open timetable
+      </a>
     </div>
   `;
 
@@ -451,41 +370,30 @@ document.getElementById("predict-modal")?.addEventListener("click", e => {
 });
 
 // ── Log ────────────────────────────────────────────────────────
-function addLog(courseId, present) {
-  const course = getCourse(courseId);
-  const { percent } = getAttendance(courseId);
-
-  logEntries.unshift({
-    courseId,
-    present,
-    percent,
-    name: course.name,
-    timestamp: new Date().toISOString(),
-  });
-  if (logEntries.length > 30) logEntries.pop();
-  try {
-    saveAttendanceLog(logEntries);
-  } catch (error) {
-    showToast("Attendance saved; history could not be saved", error.message, "danger");
-  }
-  renderLog();
-}
-
 function renderLog() {
   const logEl = document.getElementById("history-log");
   if (!logEl) return;
 
-  if (!logEntries.length) {
-    logEl.innerHTML = `<div style="text-align:center;padding:var(--space-8);color:var(--clr-text-muted);font-size:var(--fs-sm)">Mark attendance above to see your log here ✨</div>`;
+  const entries = [
+    ...logEntries,
+    ...getScheduledClasses().map(session => ({
+      ...session,
+      timestamp: `${session.date}T${session.endTime}`,
+      name: getCourse(session.courseId)?.name || session.courseId,
+    })),
+  ].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).slice(0, 50);
+
+  if (!entries.length) {
+    logEl.innerHTML = `<div style="text-align:center;padding:var(--space-8);color:var(--clr-text-muted);font-size:var(--fs-sm)">Completed timetable classes will appear here.</div>`;
     return;
   }
-  logEl.innerHTML = logEntries.map(e => `
+  logEl.innerHTML = entries.map(e => `
     <div class="log-entry">
       <div class="log-dot" style="background:${e.present ? "var(--clr-safe)" : "var(--clr-danger)"}"></div>
       <span style="color:var(--clr-text-muted);font-family:var(--font-mono);font-size:var(--fs-xs)">${new Date(e.timestamp).toLocaleString("en-IN", { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" })}</span>
-      <span style="flex:1;font-weight:600">${e.present ? "✅ Present" : "❌ Absent"}</span>
+      <span style="flex:1;font-weight:600">${e.present ? "Present" : "Absent"}</span>
       <span style="color:var(--clr-text-muted)">${escapeHtml(e.name)}</span>
-      <span class="badge badge--${e.percent>=75?"safe":e.percent>=60?"warning":"danger"}">${e.percent}%</span>
+      ${Number.isInteger(e.percent) ? `<span class="badge badge--${e.percent>=75?"safe":e.percent>=60?"warning":"danger"}">${e.percent}%</span>` : ""}
     </div>`).join("");
 }
 
@@ -580,16 +488,6 @@ window.removeCourse = async function(courseId) {
 // ── Daily Flow, Undo & CSV Export ──────────────────────────────
 window.startDailyPlan = () => openDailyFlow();
 
-window.undoMark = function() {
-  try {
-    const res = undoAttendance();
-    showToast("Action Undone! ↩", `Reverted ${res.undoneEntry.present ? "Present" : "Absent"} mark for ${res.undoneEntry.name}`, "info");
-    refreshAll();
-  } catch (err) {
-    showToast("Cannot Undo", err.message, "danger");
-  }
-};
-
 window.exportCSV = function() {
   try {
     exportAttendanceCSV(COURSES);
@@ -601,22 +499,16 @@ window.exportCSV = function() {
 
 // ── Reset all ──────────────────────────────────────────────────
 window.clearAll = async function() {
-  if (!confirm("Reset attendance records back to semester seed data?")) return;
-  try {
-    await fetch("/api/attendance/reset", { method: "POST" });
-  } catch {
-    // offline fallback
-  }
+  if (!confirm("Reset this browser's attendance records? This cannot be undone.")) return;
   clearStorage();
-  await syncState();
   renderSummary();
   renderCards();
   renderStory();
   logEntries.length = 0;
   renderLog();
   document.getElementById("history-log").innerHTML =
-    `<div style="text-align:center;padding:var(--space-8);color:var(--clr-text-muted);font-size:var(--fs-sm)">Reset to semester seed data ✨</div>`;
-  showToast("Database Reset", "Restored to semester baseline records", "info");
+    `<div style="text-align:center;padding:var(--space-8);color:var(--clr-text-muted);font-size:var(--fs-sm)">Attendance tracking will resume from now.</div>`;
+  showToast("Attendance reset", "Tracking will resume from now; your profile is unchanged.", "info");
 };
 
 // ── Toast ──────────────────────────────────────────────────────

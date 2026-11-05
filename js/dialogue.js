@@ -5,23 +5,23 @@
 // ============================================================
 
 import { COURSES, getCourse } from "./data.js";
-import { getAttendance, getStatus, getSafeSkips, predictSkip, markAttendance, classesNeeded, syncState } from "./logic.js";
+import { getAttendance, getStatus, getSafeSkips, predictSkip, classesNeeded, syncState } from "./logic.js";
 import { getStudentProfile } from "./storage.js";
 
 // Characters
 const ACTORS = {
   student: {
     id: "student",
-    name: "Alex",
+    name: "Student",
     role: "The Student",
-    title: "Alex (Student)",
+    title: "Student",
     elementId: "actor-student"
   },
   tracker: {
     id: "tracker",
     name: "Trace",
     role: "The Tracker",
-    title: "Trace (AI Tracker)",
+    title: "Trace (Attendance tracker)",
     elementId: "actor-tracker"
   },
   instructor: {
@@ -62,7 +62,10 @@ function setSpeaker(actorKey, animClass = "anim-idle") {
   const speakerEl = document.getElementById("dialogue-speaker");
   const actor = ACTORS[actorKey];
   if (speakerEl && actor) {
-    speakerEl.textContent = actor.title;
+    const name = actorKey === "student"
+      ? getStudentProfile()?.name || "Student"
+      : actor.title;
+    speakerEl.textContent = actorKey === "student" ? name : actor.title;
   }
 
   // Update visual states
@@ -101,11 +104,11 @@ export function playScenario(courseId) {
   if (actionsEl) actionsEl.innerHTML = ""; // clear old choices
 
   const profile = getStudentProfile();
-  const studentName = profile?.name || "Alex";
+  const studentName = profile?.name || "Student";
 
   // Step 1: Student speaks
   setSpeaker("student", "anim-idle");
-  const studentLine = `Should I attend ${course.code} (${course.name}) today? I have ${attended}/${total} classes so far (${percent}%).`;
+  const studentLine = `${studentName}, your ${course.code} record is ${attended}/${total} classes (${percent}%). Should you attend today?`;
 
   typeWriter(studentLine, () => {
     // Step 2: Tracker speaks after short pause
@@ -139,7 +142,7 @@ export function playScenario(courseId) {
 
           setSpeaker("instructor", instructorAnim);
           typeWriter(instructorLine, () => {
-            renderDecisionButtons(courseId, status);
+            renderDecisionButtons(courseId);
           });
         }, 1100);
       });
@@ -148,51 +151,22 @@ export function playScenario(courseId) {
 }
 
 // ── Render Decision Buttons (Calls into Logic) ───────────────
-function renderDecisionButtons(courseId, status) {
+function renderDecisionButtons(courseId) {
   const actionsEl = document.getElementById("dialogue-actions");
   if (!actionsEl) return;
 
-  const isDanger = status === "danger";
-
   actionsEl.innerHTML = `
-    <button class="decision-btn decision-btn--attend" id="btn-attend">
-      ✅ Go to Class (Mark Present)
-    </button>
-    <button class="decision-btn ${isDanger ? "decision-btn--force-skip" : "decision-btn--skip"}" id="btn-skip">
-      ${isDanger ? "⚠️ Skip Anyway (Risk Detention)" : "❌ Skip Class (Mark Absent)"}
-    </button>
+    <a class="decision-btn decision-btn--attend" href="timetable.html?course=${encodeURIComponent(courseId)}">
+      Review this class in the timetable
+    </a>
   `;
-
-  document.getElementById("btn-attend")?.addEventListener("click", () => handleUserChoice(courseId, true));
-  document.getElementById("btn-skip")?.addEventListener("click", () => handleUserChoice(courseId, false));
-}
-
-async function handleUserChoice(courseId, present) {
-  const actionsEl = document.getElementById("dialogue-actions");
-  if (actionsEl) actionsEl.innerHTML = `<span style="font-size:var(--fs-xs);color:var(--clr-text-muted)">Saving decision to database...</span>`;
-
-  // 1. Call logic.js (which synchronizes with the backend server!)
-  await markAttendance(courseId, present);
-
-  const course = getCourse(courseId);
-  const { percent } = getAttendance(courseId);
-  const status = getStatus(courseId);
-
-  if (present) {
-    setSpeaker("student", "anim-idle");
-    typeWriter(`Made the responsible choice! Marked present for ${course.code}. Attendance is now ${percent}%.`, () => {
-      setTimeout(() => playScenario(courseId), 1800);
-    });
-  } else {
-    setSpeaker("tracker", status === "danger" ? "anim-angry" : "anim-idle");
-    typeWriter(`Absence recorded on server for ${course.code}. Attendance dropped to ${percent}% (${status.toUpperCase()}).`, () => {
-      setTimeout(() => playScenario(courseId), 2000);
-    });
-  }
 }
 
 // ── Initialize Dialogue Stage ───────────────────────────────
 export async function initDialogueStage() {
+  const profile = getStudentProfile();
+  const studentNameEl = document.getElementById("actor-student-name");
+  if (studentNameEl) studentNameEl.textContent = profile?.name || "Student";
   const pickerEl = document.getElementById("stage-course-picker");
   if (pickerEl) {
     pickerEl.innerHTML = COURSES.map(c => `

@@ -13,28 +13,31 @@ import { getStudentProfile, loadAttendanceLog } from "./storage.js";
 import { startClock } from "./clock.js";
 import { startNotifications } from "./notify.js";
 
-const EMOJI = {
-  CS301: "🧩", DS365: "💻", CS351: "🛠️",
-  DS304: "🤖", EC354: "⚡",
-};
-
 let chartInstance = null;
 let trendChartInstance = null;
 let selectedTrendCourse = "ALL";
 
 // ── Boot ───────────────────────────────────────────────────────
 document.addEventListener("DOMContentLoaded", async () => {
+  if (!getStudentProfile()) {
+    window.location.replace("index.html");
+    return;
+  }
   startClock("navbar-clock");
   startNotifications();
+  document.getElementById("refresh-attendance")?.addEventListener("click", () => window.location.reload());
 
   initTrendSelector();
 
   // Optimistic initial render with local seed/cached data
   renderAll();
 
-  // Fresh sync with backend server (survives refreshes)
   await syncState();
   renderAll();
+  setInterval(async () => {
+    await syncState();
+    renderAll();
+  }, 30_000);
 });
 
 function renderAll() {
@@ -83,7 +86,7 @@ function checkAlerts() {
   const danger = COURSES.filter(c => getStatus(c.id) === "danger");
   if (danger.length > 0) {
     text.textContent =
-      `⚠ ${danger.length} subject${danger.length > 1 ? "s are" : " is"} in danger zone: ` +
+      `${danger.length} subject${danger.length > 1 ? "s are" : " is"} below the required attendance threshold: ` +
       danger.map(c => c.code).join(", ") +
       ". Mandatory 75% target breached — attend every upcoming class!";
     el.style.display = "flex";
@@ -104,15 +107,14 @@ function renderMetrics() {
   const maxSkips = COURSES.reduce((s, c) => s + getSafeSkips(c.id), 0);
 
   const cards = [
-    { icon: "📊", val: `${avg}%`, lbl: "Overall Attendance", color: "var(--clr-primary-dark)" },
-    { icon: "✅", val: totalPresent, lbl: "Classes Attended", color: "var(--clr-safe-text)" },
-    { icon: "🗓", val: weekClasses, lbl: "Weekly Slots", color: "var(--clr-accent-dark)" },
-    { icon: "🎯", val: maxSkips, lbl: "Total Safe Skips", color: "var(--clr-lavender-dark)" },
+    { val: `${avg}%`, lbl: "Overall attendance", color: "var(--clr-primary-dark)" },
+    { val: totalPresent, lbl: "Classes attended", color: "var(--clr-safe-text)" },
+    { val: weekClasses, lbl: "Weekly classes", color: "var(--clr-accent-dark)" },
+    { val: maxSkips, lbl: "Safe skips remaining", color: "var(--clr-lavender-dark)" },
   ];
 
   el.innerHTML = cards.map(c => `
     <div class="stat-card" style="--stat-color:${c.color}">
-      <div class="stat-card__icon">${c.icon}</div>
       <div class="stat-card__value">${c.val}</div>
       <div class="stat-card__label">${c.lbl}</div>
     </div>`).join("");
@@ -133,17 +135,14 @@ function renderStatusBlocks() {
 
   el.innerHTML = `
     <div class="status-block" style="--sb-clr:var(--clr-safe)">
-      <div class="sb-emoji">✅</div>
       <div class="sb-val" style="color:var(--clr-safe-text)">${safe}</div>
       <div class="sb-lbl">Safe (≥75%)</div>
     </div>
     <div class="status-block" style="--sb-clr:var(--clr-warning)">
-      <div class="sb-emoji">⚠️</div>
       <div class="sb-val" style="color:var(--clr-warning-text)">${warning}</div>
       <div class="sb-lbl">Warning (60–74%)</div>
     </div>
     <div class="status-block" style="--sb-clr:var(--clr-danger)">
-      <div class="sb-emoji">🚨</div>
       <div class="sb-val" style="color:var(--clr-danger-text)">${danger}</div>
       <div class="sb-lbl">Danger (<60%)</div>
     </div>`;
@@ -165,7 +164,6 @@ function renderCourseList() {
     const status = getStatus(course.id);
     const skips = getSafeSkips(course.id);
     const needed = classesNeeded(course.id);
-    const emoji = EMOJI[course.id] || "📖";
     const statusClr = {
       safe: "var(--clr-safe-text)",
       warning: "var(--clr-warning-text)",
@@ -181,8 +179,6 @@ function renderCourseList() {
     return `
       <div class="dash-course-card" style="--card-clr:${course.color}"
            onclick="location.href='tracker.html?course=${course.id}'">
-        <div class="dcc-icon">${emoji}</div>
-
         <div class="dcc-body">
           <div class="dcc-name">${escapeHtml(course.name)}</div>
           <div class="dcc-meta">
