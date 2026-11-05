@@ -107,13 +107,8 @@ async function runTests() {
 
     // ── Test 2: Courses API ──
     const courses = await testApi('GET', '/api/courses');
-feature/daily-attendance-flow
-    assert(courses.status === 200 && Array.isArray(courses.data.courses) && courses.data.courses.length === 5,
-      'GET /api/courses returns 5 real semester courses');
-
-    assert(courses.status === 200 && Array.isArray(courses.data.courses) && courses.data.courses.length >= 6,
-      'GET /api/courses returns semester courses');
-main
+   assert(courses.status === 200 && Array.isArray(courses.data.courses) && courses.data.courses.length === 5,
+     'GET /api/courses returns 5 real semester courses');
 
     // ── Test 3: Input Validation - Missing courseId ──
     const noId = await testApi('POST', '/api/attendance/mark', { present: true });
@@ -174,7 +169,7 @@ main
     // ── Test 12: Rounding Threshold Check (Near 75% Detention Rule) ──
     // 56/75 is 74.67%. It must NOT falsely report 'safe' (75%)
     const thresholdUpdate = await testApi('POST', '/api/attendance/update', {
-      courseId: 'CS302',
+      courseId: 'CS301',
       attended: 56,
       total: 75
     });

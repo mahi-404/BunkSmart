@@ -44,14 +44,15 @@
 <header class="dash-header">
   <div class="container" style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:var(--space-4)">
     <div>
-      <div class="header-eyebrow" style="color:var(--clr-accent)">📊 Overview & Analytics</div>
+      <div class="header-eyebrow" style="color:var(--clr-accent)">Overview and analytics</div>
       <h1 class="page-header__title">
         Your Attendance Dashboard
       </h1>
       <p class="page-header__subtitle">Every subject, safe skips, recovery plans, and trend analytics in one place.</p>
     </div>
     <div id="dash-profile-chip" style="background:rgba(255,255,255,0.9);padding:8px 16px;border-radius:24px;border:1px solid #dfd2ff;display:flex;align-items:center;gap:10px;font-size:var(--fs-xs)">
-      <span>👤 <strong id="dash-student-name">Student</strong> (<span id="dash-student-roll">Roll #</span>)</span>
+      <span><strong id="dash-student-name">Student</strong> (<span id="dash-student-roll">Roll #</span>)</span>
+      <button class="btn btn--ghost btn--sm" id="refresh-attendance" type="button">Refresh attendance</button>
       <a href="index.html" class="btn btn--ghost btn--sm" style="padding:4px 8px;font-size:11px">Switch</a>
     </div>
   </div>
@@ -64,7 +65,7 @@
 
     <!-- Alert banner (shown only when danger subjects exist) -->
     <div class="alert-banner" id="alert-banner" style="display:none">
-      <div class="alert-banner__icon">🚨</div>
+      <div class="alert-banner__icon">!</div>
       <div class="alert-banner__text" id="alert-text">Some subjects need urgent attention!</div>
       <span class="alert-banner__close" onclick="this.parentElement.style.display='none'">✕</span>
     </div>
@@ -77,7 +78,7 @@
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-4);flex-wrap:wrap;gap:var(--space-3)">
         <div>
           <h2 style="font-size:var(--fs-base);font-weight:800;color:var(--clr-text);margin:0;display:flex;align-items:center;gap:8px">
-            📈 Attendance Trend & 75% Safety Line
+            Attendance trend and 75% threshold
           </h2>
           <p style="font-size:var(--fs-xs);color:var(--clr-text-muted);margin:3px 0 0">
             Real progress curve. The dashed red line represents the mandatory 75% detention threshold.
@@ -104,7 +105,7 @@
       <!-- Left: course list -->
       <div>
         <div style="font-size:var(--fs-lg);font-weight:700;color:var(--clr-text);letter-spacing:-0.02em;margin-bottom:var(--space-4)">
-          📚 Subject Breakdown
+          Subject breakdown
         </div>
         <div class="course-list" id="course-list"></div>
       </div>

@@ -47,9 +47,14 @@
 ═════════════════════════════════════════════════════════════ -->
 <header class="page-header">
   <div class="container">
-    <div class="header-eyebrow">📅 Weekly Schedule</div>
+    <div class="student-profile-chip" style="display:flex;justify-content:flex-end;align-items:center;gap:10px;margin-bottom:12px">
+      <span><strong id="timetable-student-name">Student</strong> (<span id="timetable-student-roll">Roll #</span>)</span>
+      <button class="btn btn--ghost btn--sm" id="refresh-attendance" type="button">Refresh attendance</button>
+      <a href="index.html" class="btn btn--ghost btn--sm">Profile</a>
+    </div>
+    <div class="header-eyebrow">Weekly schedule</div>
     <h1 class="page-header__title">Your Timetable</h1>
-    <p class="page-header__subtitle">All your classes, attendance, and safe skips — in one view.</p>
+    <p class="page-header__subtitle">Save an Attend or Skip plan for upcoming classes. Only classes that have ended count toward attendance.</p>
     <div class="date-badge" id="header-date">
       <span class="dot"></span>
       <span id="date-text">Loading…</span>

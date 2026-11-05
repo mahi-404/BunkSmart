@@ -42,14 +42,15 @@
 <header class="tracker-header">
   <div class="container" style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:var(--space-4)">
     <div>
-      <div class="header-eyebrow" style="color:var(--clr-safe)">📋 Attendance Tracker</div>
+      <div class="header-eyebrow" style="color:var(--clr-safe)">Attendance tracker</div>
       <h1 class="page-header__title">
         Track Smart, Stay Safe
       </h1>
-      <p class="page-header__subtitle">Mark your attendance and know exactly when you can afford to bunk.</p>
+      <p class="page-header__subtitle">Completed scheduled classes determine your attendance. Unmarked classes count as absent.</p>
     </div>
     <div id="student-profile-chip" style="background:rgba(255,255,255,0.9);padding:8px 16px;border-radius:24px;border:1px solid #dfd2ff;display:flex;align-items:center;gap:10px;font-size:var(--fs-xs)">
-      <span>👤 <strong id="student-name-display">Student</strong> (<span id="student-roll-display">Roll #</span>)</span>
+      <span><strong id="student-name-display">Student</strong> (<span id="student-roll-display">Roll #</span>)</span>
+      <button class="btn btn--ghost btn--sm" id="refresh-attendance" type="button">Refresh attendance</button>
       <a href="index.html" class="btn btn--ghost btn--sm" style="padding:4px 8px;font-size:11px">Switch</a>
     </div>
   </div>
@@ -63,14 +64,13 @@
     <!-- Daily check-in banner -->
     <div class="daily-banner">
       <div class="daily-banner__left">
-        <div class="daily-banner__icon">☀️</div>
         <div>
           <div class="daily-banner__title">Daily Attendance Plan & Check-in</div>
           <div class="daily-banner__sub">Walk through today's classes step-by-step with Trace and Prof. Maya before deciding.</div>
         </div>
       </div>
       <button class="btn btn--primary" id="btn-open-daily-flow" onclick="window.startDailyPlan()">
-        ☀️ Plan Today's Classes →
+        Plan today's classes
       </button>
     </div>
 
@@ -81,9 +81,9 @@
     <section class="story-panel" aria-labelledby="story-title">
       <div class="story-heading">
         <div>
-          <div class="header-eyebrow">🎭 Chapter 1 · The 75% Line</div>
+          <div class="header-eyebrow">The 75% threshold</div>
           <h2 id="story-title">One decision before the next class</h2>
-          <p>Alex is tempted to skip. Trace has the numbers. Prof. Maya has the attendance sheet.</p>
+          <p>Your decision is yours. Trace calculates the impact, and Prof. Maya keeps the attendance sheet.</p>
         </div>
         <label class="story-course-picker">
           <span>Choose a class</span>
@@ -92,8 +92,8 @@
       </div>
       <div class="story-cast">
         <article class="story-character story-character--student">
-          <img src="Divya.png" alt="Alex, the student" />
-          <div class="story-character__name">Alex <span>THE STUDENT</span></div>
+          <img src="Divya.png" alt="Student" />
+          <div class="story-character__name"><span id="story-student-name">Student</span> <span>THE STUDENT</span></div>
           <p id="story-alex">Maybe one more day off won't hurt… right?</p>
         </article>
         <article class="story-character story-character--tracker">
@@ -108,9 +108,8 @@
         </article>
       </div>
       <div class="story-actions">
-        <button class="btn btn--ghost btn--sm" type="button" onclick="window.storyAsk()">🔮 Ask Trace</button>
-        <button class="btn btn--accent btn--sm" type="button" onclick="window.storyAttend()">✅ Attend class</button>
-        <button class="btn btn--danger btn--sm" type="button" onclick="window.storyPredict()">😈 Consider a skip</button>
+        <button class="btn btn--ghost btn--sm" type="button" onclick="window.storyAsk()">Check attendance</button>
+        <button class="btn btn--danger btn--sm" type="button" onclick="window.storyPredict()">Preview an absence</button>
       </div>
     </section>
 
@@ -121,18 +120,17 @@
           Your Subjects
         </div>
         <div style="font-size:var(--fs-xs);color:var(--clr-text-muted);margin-top:2px">
-          Tap ✅ Present or ❌ Absent after each class
+          Attendance is recorded for each scheduled class after it ends
         </div>
       </div>
       <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
-        <button class="btn btn--ghost btn--sm" id="btn-undo-mark" onclick="window.undoMark()">↩ Undo Last Mark</button>
-        <button class="btn btn--ghost btn--sm" onclick="window.exportCSV()">📥 Export CSV</button>
-        <button class="btn btn--ghost btn--sm" onclick="window.clearAll()">🗑 Reset All</button>
+        <button class="btn btn--ghost btn--sm" onclick="window.exportCSV()">Export CSV</button>
+        <button class="btn btn--ghost btn--sm" onclick="window.clearAll()">Reset attendance</button>
       </div>
     </div>
 
     <details class="course-manager" id="course-manager">
-      <summary>➕ Add a subject or manage your course list</summary>
+      <summary>Add a subject or manage your course list</summary>
       <form class="course-form" id="course-form">
         <div class="course-form__grid">
           <label>Course ID
@@ -165,11 +163,11 @@
     <!-- Attendance log -->
     <div>
       <div class="section-title" style="font-size:var(--fs-lg);font-weight:700;color:var(--clr-text);letter-spacing:-0.02em;margin-bottom:var(--space-4)">
-        📜 Recent Log
+        Recent attendance
       </div>
       <div class="history-log" id="history-log">
         <div style="text-align:center;padding:var(--space-8);color:var(--clr-text-dim);font-size:var(--fs-sm)">
-          Mark attendance above to see your log here ✨
+          Completed timetable classes will appear here.
         </div>
       </div>
     </div>

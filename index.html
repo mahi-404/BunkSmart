@@ -45,48 +45,59 @@
   <div class="hero-orb hero-orb--3"></div>
 
   <div class="container hero-content">
-    <div class="hero-badge">✨ Your smart attendance companion</div>
+    <div class="hero-badge">Your attendance, clearly tracked</div>
 
     <h1 class="hero-title">
-      Never get<br>
-      <span class="hero-title-grad">detained again.</span>
+      Know where<br>
+      <span class="hero-title-grad">you stand.</span>
     </h1>
 
     <p class="hero-sub">
-      Track attendance, predict safe skips, get alerts before you cross the line —
-      all in one place. Built for students, by students.
+      Track attendance, see the effect of an absence, and keep an eye on your required attendance.
     </p>
     <!-- Student Login -->
 <div class="student-login">
-  <h3>Welcome to BunkSmart 👋</h3>
-  <p>Enter your details to access your personal attendance dashboard.</p>
+  <h3 id="student-greeting">Welcome to BunkSmart</h3>
+  <p>Enter your name and college roll number to save your attendance on this browser.</p>
 
-  <form id="student-login-form">
+  <form id="student-login-form" novalidate>
     <input
       type="text"
       id="student-name"
-      placeholder="Enter your name"
+      placeholder="Your name"
+      aria-label="Your name"
+      autocomplete="name"
+      maxlength="80"
       required
     />
 
     <input
       type="text"
       id="student-roll"
-      placeholder="Enter your roll number"
+      placeholder="24BCS123"
+      aria-label="College roll number"
+      aria-describedby="roll-hint profile-message"
+      autocomplete="off"
+      autocapitalize="characters"
+      maxlength="8"
+      pattern="[0-9]{2}B(CS|DS|EC)[0-9]{3}"
+      title="Use the format 24BCS123: two year digits, B, CS/DS/EC, and three digits."
       required
     />
 
     <button type="submit" class="btn btn--primary btn--lg">
-      Continue to BunkSmart →
+      Save profile
     </button>
   </form>
 
-  <p id="profile-message"></p>
+  <p id="roll-hint" class="login-hint">Format: two year digits, B, CS, DS, or EC, then three digits (for example, 24BCS123).</p>
+  <p id="profile-message" class="login-message" role="status" aria-live="polite"></p>
+  <button id="refresh-profile" class="btn btn--ghost" type="button" hidden>Refresh app</button>
 </div>
 
     <div class="hero-actions">
-      <a href="timetable.html" class="btn btn--primary btn--lg">📅 View Timetable</a>
-      <a href="tracker.html"   class="btn btn--ghost  btn--lg">📋 Mark Attendance</a>
+      <a href="timetable.html" class="btn btn--primary btn--lg">View timetable</a>
+      <a href="tracker.html"   class="btn btn--ghost  btn--lg">Track attendance</a>
     </div>
 
     <!-- Quick-stat pills -->
@@ -98,22 +109,22 @@
 <!-- ══════════════════════════ CHARACTERS ══════════════════════════ -->
 <section class="chars-section">
   <div class="container">
-    <div class="section-eyebrow">Meet the Squad</div>
-    <h2 class="section-heading">Three characters. One mission.</h2>
-    <p class="section-sub">They guide you through every attendance decision.</p>
+    <div class="section-eyebrow">Your attendance team</div>
+    <h2 class="section-heading">Clear guidance for each decision.</h2>
+    <p class="section-sub">See your record, review the impact, and decide what to do next.</p>
 
     <div class="chars-grid">
 
       <!-- Student -->
       <div class="char-card char-card--student">
         <div class="char-bubble">
-          <div class="char-avatar"><img src="Divya.png" alt="Alex, the student" /></div>
+          <div class="char-avatar"><img src="Divya.png" alt="Student" /></div>
           <div class="char-ring char-ring--student"></div>
         </div>
-        <div class="char-name">Alex</div>
+        <div class="char-name" id="student-character-name">Student</div>
         <div class="char-role">The Student</div>
-        <div class="char-desc">That's you! Asking the real questions — "Can I skip today?" — and dealing with the consequences either way.</div>
-        <div class="char-tag" style="--tag-clr:var(--clr-student)">🎭 Protagonist</div>
+        <div class="char-desc">Your name and attendance record appear throughout the app.</div>
+        <div class="char-tag" style="--tag-clr:var(--clr-student)">Student</div>
       </div>
 
       <!-- Tracker -->
@@ -124,8 +135,8 @@
         </div>
         <div class="char-name">Trace</div>
         <div class="char-role">The Tracker</div>
-        <div class="char-desc">Cold, calculated, always watching the numbers. Tells you exactly how many skips you have left — no sugarcoating.</div>
-        <div class="char-tag" style="--tag-clr:var(--clr-tracker)">📊 Data Brain</div>
+        <div class="char-desc">Trace shows your attendance numbers and the effect of missing a class.</div>
+        <div class="char-tag" style="--tag-clr:var(--clr-tracker)">Attendance guide</div>
       </div>
 
       <!-- Instructor -->
@@ -136,8 +147,8 @@
         </div>
         <div class="char-name">Prof. Maya</div>
         <div class="char-role">The Instructor</div>
-        <div class="char-desc">Strict but fair. Reacts when you miss too many classes. Push her too far and detention awaits.</div>
-        <div class="char-tag" style="--tag-clr:var(--clr-instructor)">⚠️ Final Boss</div>
+        <div class="char-desc">Prof. Maya reminds you when your attendance is below the required level.</div>
+        <div class="char-tag" style="--tag-clr:var(--clr-instructor)">Faculty</div>
       </div>
 
     </div>
@@ -146,9 +157,9 @@
     <div style="margin-top:var(--space-12)">
       <div class="character-stage">
         <div class="stage-header">
-          <div class="header-eyebrow" style="justify-content:center">🎭 Interactive Decision Stage</div>
-          <h3 class="stage-title">Ask the Squad: "Can I Skip Today?"</h3>
-          <p class="stage-subtitle">Select a course to test the dialogue engine against your real attendance database.</p>
+          <div class="header-eyebrow" style="justify-content:center">Attendance check-in</div>
+          <h3 class="stage-title">Make an informed attendance decision</h3>
+          <p class="stage-subtitle">Choose a course to see how today's decision affects your attendance.</p>
         </div>
 
         <!-- Course Picker -->
@@ -157,23 +168,23 @@
         <!-- Arena with 3 actors -->
         <div class="characters-arena">
           <div class="character-slot character-slot--student" id="actor-student">
-            <div class="actor-bubble">🧑‍💻</div>
+            <div class="actor-bubble">S</div>
             <div class="actor-meta">
-              <div class="actor-name">Alex</div>
+              <div class="actor-name" id="actor-student-name">Student</div>
               <div class="actor-role">Student</div>
             </div>
           </div>
 
           <div class="character-slot character-slot--tracker" id="actor-tracker">
-            <div class="actor-bubble">🤖</div>
+            <div class="actor-bubble">T</div>
             <div class="actor-meta">
               <div class="actor-name">Trace</div>
-              <div class="actor-role">AI Tracker</div>
+              <div class="actor-role">Attendance tracker</div>
             </div>
           </div>
 
           <div class="character-slot character-slot--instructor" id="actor-instructor">
-            <div class="actor-bubble">👩‍🏫</div>
+            <div class="actor-bubble">M</div>
             <div class="actor-meta">
               <div class="actor-name">Prof. Maya</div>
               <div class="actor-role">Faculty</div>
@@ -203,38 +214,38 @@
 <section class="features-section">
   <div class="container">
     <div class="section-eyebrow">What you get</div>
-    <h2 class="section-heading">Built different.</h2>
+    <h2 class="section-heading">Tools for your semester.</h2>
 
     <div class="features-grid">
       <div class="feat-card">
-        <div class="feat-icon">📅</div>
+        <div class="feat-icon">01</div>
         <div class="feat-title">Live Timetable</div>
         <div class="feat-desc">Full 5-day grid with today highlighted, attendance status on every class, and 1-click detail popups.</div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">🧮</div>
-        <div class="feat-title">Smart Predictions</div>
-        <div class="feat-desc">"What if I skip?" tells you instantly. See your attendance drop before you commit to binge-watching.</div>
+        <div class="feat-icon">02</div>
+        <div class="feat-title">Absence forecast</div>
+        <div class="feat-desc">See how missing your next class would change your attendance.</div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">🔔</div>
-        <div class="feat-title">Pre-Class Alerts</div>
-        <div class="feat-desc">Get notified 5–10 minutes before a low-attendance class. Browser notifications + in-app toast fallback.</div>
+        <div class="feat-icon">03</div>
+        <div class="feat-title">Class reminders</div>
+        <div class="feat-desc">Enable browser reminders for upcoming classes.</div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">📊</div>
+        <div class="feat-icon">04</div>
         <div class="feat-title">Dashboard Overview</div>
         <div class="feat-desc">Course cards, attendance chart, safe/warning/danger status at a glance. Your progress, visualised.</div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">💾</div>
-        <div class="feat-title">Survives Refresh</div>
-        <div class="feat-desc">Synchronized with Node backend server and persisted to disk. F5 refresh safe and verified.</div>
+        <div class="feat-icon">05</div>
+        <div class="feat-title">Saved on this browser</div>
+        <div class="feat-desc">Your profile and attendance records remain available after a refresh.</div>
       </div>
       <div class="feat-card">
-        <div class="feat-icon">🎭</div>
-        <div class="feat-title">Character Dialogue</div>
-        <div class="feat-desc">Interactive 3-character stage with typewriter speech bubbles, angry shake reactions, and direct decision consequences.</div>
+        <div class="feat-icon">06</div>
+        <div class="feat-title">Decision guide</div>
+        <div class="feat-desc">Review a course's current attendance before marking present or absent.</div>
       </div>
     </div>
   </div>
@@ -245,9 +256,8 @@
 <section class="cta-section">
   <div class="cta-orb"></div>
   <div class="container cta-content">
-    <div class="cta-emoji">🚀</div>
-    <h2 class="cta-title">Ready to stop guessing?</h2>
-    <p class="cta-sub">Open your timetable and start tracking. It takes 30 seconds.</p>
+    <h2 class="cta-title">Ready to track your attendance?</h2>
+    <p class="cta-sub">Open your timetable or review your records.</p>
     <div style="display:flex;gap:var(--space-4);justify-content:center;flex-wrap:wrap">
       <a href="timetable.html" class="btn btn--primary btn--lg">Get Started →</a>
       <a href="dashboard.html" class="btn btn--ghost  btn--lg">See Dashboard</a>
@@ -259,7 +269,7 @@
 <!-- ══════════════════════════ FOOTER ══════════════════════════ -->
 <footer class="site-footer">
   <div class="container">
-    <span>BunkSmart · Made with ☕ and panic · </span>
+    <span>BunkSmart · Attendance tracking for students · </span>
     <span style="color:var(--clr-text-dim)">B.Tech CS · FSD Project</span>
   </div>
 </footer>
@@ -288,37 +298,64 @@
   const rollInput = document.getElementById("student-roll");
   const loginForm = document.getElementById("student-login-form");
   const message = document.getElementById("profile-message");
+  const greeting = document.getElementById("student-greeting");
+
+  function showStudentName(name) {
+    document.getElementById("student-character-name").textContent = name;
+    document.getElementById("actor-student-name").textContent = name;
+    greeting.textContent = `Welcome, ${name}`;
+  }
+
+  function showProfileMessage(text, isError = false) {
+    message.textContent = text;
+    message.classList.toggle("login-message--error", isError);
+  }
 
   if (existingProfile) {
     nameInput.value = existingProfile.name;
     rollInput.value = existingProfile.rollNumber;
-    message.innerHTML = `Welcome back, <strong>${existingProfile.name}</strong> (${existingProfile.rollNumber})! <a href="tracker.html" style="color:#7c3aed;font-weight:700;margin-left:8px;text-decoration:underline">Go to Tracker & Daily Plan →</a>`;
+    showStudentName(existingProfile.name);
+    showProfileMessage(`Your profile is saved on this browser for ${existingProfile.rollNumber}.`);
+    document.getElementById("refresh-profile").hidden = false;
   }
+  document.getElementById("refresh-profile").addEventListener("click", () => window.location.reload());
 
-  // Handle student login
+  rollInput.addEventListener("input", () => {
+    const cursor = rollInput.selectionStart;
+    rollInput.value = rollInput.value.toUpperCase().replace(/\s/g, "");
+    rollInput.setSelectionRange(cursor, cursor);
+    rollInput.setCustomValidity("");
+  });
+
   loginForm.addEventListener("submit", (event) => {
     event.preventDefault();
 
     const name = nameInput.value.trim();
     const rollNumber = rollInput.value.trim();
 
-    if (!name || !rollNumber) {
-      message.textContent = "Please enter both details.";
+    if (!name || name.length > 80) {
+      showProfileMessage("Enter a name of 1 to 80 characters.", true);
+      nameInput.focus();
+      return;
+    }
+
+    if (!/^[0-9]{2}B(?:CS|DS|EC)[0-9]{3}$/.test(rollNumber)) {
+      const error = "Enter a valid roll number, for example 24BCS123.";
+      rollInput.setCustomValidity(error);
+      showProfileMessage(error, true);
+      rollInput.reportValidity();
+      rollInput.focus();
       return;
     }
 
     try {
       saveStudentProfile({ name, rollNumber });
-
-      message.textContent = `Profile saved for ${name}! Opening your attendance tracker...`;
-
-      // Redirect directly to personal tracker with daily plan
-      setTimeout(() => {
-        window.location.href = "tracker.html";
-      }, 500);
-
+      document.getElementById("refresh-profile").hidden = false;
+      showStudentName(name);
+      showProfileMessage(`Profile saved for ${rollNumber}. Your attendance will be kept on this browser.`);
+      initDialogueStage();
     } catch (error) {
-      message.textContent = error.message;
+      showProfileMessage(error.message, true);
     }
   });
 
@@ -327,12 +364,11 @@
 
   if (pills) {
     pills.innerHTML = [
-      { icon: "📚", text: `${COURSES.length} subjects tracked` },
-      { icon: "⚡", text: "Instant skip prediction" },
-      { icon: "🔔", text: "Smart pre-class alerts" },
+      { text: `${COURSES.length} subjects tracked` },
+      { text: "Attendance forecasts" },
+      { text: "Class reminders" },
     ].map(p => `
       <div class="hero-pill">
-        <span>${p.icon}</span>
         <span>${p.text}</span>
       </div>
     `).join("");
