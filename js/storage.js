@@ -10,11 +10,11 @@ const BASE_PLANS_KEY = "bunksmart_attendance_plans";
 const PROFILE_KEY = "bunksmart_student_profile";
 
 export const SEED_RECORDS = {
-  CS301: { attended: 0, total: 0 },
-  DS365: { attended: 0, total: 0 },
-  CS351: { attended: 0, total: 0 },
-  DS304: { attended: 0, total: 0 },
-  EC354: { attended: 0, total: 0 },
+CS301: { attended: 19, total: 23 },
+EC303: { attended: 10, total: 18 },
+CS304: { attended: 16, total: 20 },
+DS301: { attended: 12, total: 16 },
+CS305: { attended: 9, total: 14 }
 };
 
 // ── Student Profile Management ──────────────────────────────

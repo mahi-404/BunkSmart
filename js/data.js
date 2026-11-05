@@ -4,7 +4,7 @@
 //  both import this file.
 // ============================================================
 
-import { loadCourses, removeRecord, saveCourses, postCourseToServer, deleteCourseFromServer } from "./storage.js";
+import { loadCourses, removeRecord, saveCourses } from "./storage.js";
 
 const DEFAULT_COURSES = [
   {
@@ -13,56 +13,57 @@ const DEFAULT_COURSES = [
     code: "CS301",
     instructor: "Course Instructor",
     credits: 4,
-    totalClasses: 0,
-    attended: 0,
-    requiredPercent: 75,
+    totalClasses: 23,
+    attended: 19,
+    requiredPercent: 0,
     color: "#a78bfa",
   },
   {
-    id: "DS365",
+    id: "CS304",
     name: "Full Stack Development",
-    code: "DS365",
+    code: "CS304",
     instructor: "Course Instructor",
     credits: 3,
-    totalClasses: 0,
-    attended: 0,
+    totalClasses: 20,
+    attended: 16,
     requiredPercent: 75,
     color: "#34d399",
   },
   {
-    id: "CS351",
-    name: "Software Design",
-    code: "CS351",
+    id: "CS305",
+    name: "Software Engineering",
+    code: "CS305",
     instructor: "Course Instructor",
     credits: 3,
-    totalClasses: 0,
-    attended: 0,
+    totalClasses: 14,
+    attended: 9,
     requiredPercent: 75,
     color: "#fb923c",
   },
   {
-    id: "DS304",
+    id: "DS301",
     name: "Explainable AI",
-    code: "DS304",
+    code: "DS301",
     instructor: "Course Instructor",
     credits: 3,
-    totalClasses: 0,
-    attended: 0,
+    totalClasses: 16,
+    attended: 12,
     requiredPercent: 75,
-    color: "#f9a8d4",  // soft pink
+    color: "#f87171",
   },
   {
-    id: "EC354",
-    name: "Tensor Multimodal",
+    id: "EC303",
+    name: "Tensor Multimodal data",
     code: "EC354",
     instructor: "Course Instructor",
     credits: 3,
-    totalClasses: 0,
-    attended: 0,
+    totalClasses: 18,
+    attended: 10,
     requiredPercent: 75,
     color: "#2dd4bf",
   },
 ];
+
 
 export const COURSES = loadCourses(DEFAULT_COURSES);
 
@@ -85,7 +86,7 @@ if (new Set(COURSES.map(course => course.id)).size !== COURSES.length) {
   throw new Error("Saved courses contain duplicate IDs.");
 }
 
-export async function addCourse(course) {
+export function addCourse(course) {
   validateCourse(course);
   if (COURSES.some(existing => existing.id === course.id)) {
     throw new Error(`A course with ID ${course.id} already exists.`);
@@ -93,7 +94,6 @@ export async function addCourse(course) {
   const nextCourses = [...COURSES, { ...course, requiredPercent: 75 }];
   saveCourses(nextCourses);
   COURSES.push(nextCourses[nextCourses.length - 1]);
-  return await postCourseToServer(course);
 }
 
 export function updateCourse(courseId, updates) {
@@ -107,7 +107,7 @@ export function updateCourse(courseId, updates) {
   COURSES[index] = updatedCourse;
 }
 
-export async function deleteCourse(courseId) {
+export function deleteCourse(courseId) {
   const index = COURSES.findIndex(course => course.id === courseId);
   if (index < 0) throw new Error(`Course ${courseId} was not found.`);
 
@@ -115,7 +115,6 @@ export async function deleteCourse(courseId) {
   saveCourses(nextCourses);
   COURSES.splice(index, 1);
   removeRecord(courseId);
-  return await deleteCourseFromServer(courseId);
 }
 
 export function escapeHtml(value) {
@@ -131,36 +130,37 @@ export function escapeHtml(value) {
 // Weekly timetable: each entry = one class slot
 // days: 0=Mon, 1=Tue, 2=Wed, 3=Thu, 4=Fri
 const DEFAULT_TIMETABLE = [
-  // ── Monday ─────────────────────────────────────────────────
+  // Monday
   { day: 0, startTime: "09:00", endTime: "10:00", courseId: "CS301", room: "A-101" },
   { day: 0, startTime: "10:00", endTime: "11:00", courseId: "EC354", room: "B-201" },
   { day: 0, startTime: "11:15", endTime: "12:15", courseId: "CS351", room: "A-201" },
   { day: 0, startTime: "14:00", endTime: "15:00", courseId: "DS304", room: "C-301" },
 
-  // ── Tuesday ─────────────────────────────────────────────────
+  // Tuesday
   { day: 1, startTime: "09:00", endTime: "10:00", courseId: "DS365", room: "B-102" },
   { day: 1, startTime: "10:00", endTime: "11:00", courseId: "DS304", room: "A-301" },
   { day: 1, startTime: "11:15", endTime: "12:15", courseId: "EC354", room: "B-201" },
   { day: 1, startTime: "14:00", endTime: "16:00", courseId: "CS301", room: "Lab-1" },
 
-  // ── Wednesday ────────────────────────────────────────────────
+  // Wednesday
   { day: 2, startTime: "09:00", endTime: "10:00", courseId: "CS351", room: "A-201" },
   { day: 2, startTime: "10:00", endTime: "11:00", courseId: "CS301", room: "A-101" },
   { day: 2, startTime: "11:15", endTime: "12:15", courseId: "DS365", room: "B-102" },
   { day: 2, startTime: "14:00", endTime: "16:00", courseId: "DS304", room: "Lab-2" },
 
-  // ── Thursday ─────────────────────────────────────────────────
+  // Thursday
   { day: 3, startTime: "09:00", endTime: "10:00", courseId: "EC354", room: "B-201" },
   { day: 3, startTime: "10:00", endTime: "11:00", courseId: "DS304", room: "C-301" },
   { day: 3, startTime: "11:15", endTime: "12:15", courseId: "DS304", room: "A-301" },
   { day: 3, startTime: "14:00", endTime: "15:00", courseId: "DS365", room: "B-102" },
 
-  // ── Friday ───────────────────────────────────────────────────
+  // Friday
   { day: 4, startTime: "09:00", endTime: "10:00", courseId: "CS351", room: "A-201" },
   { day: 4, startTime: "10:00", endTime: "11:00", courseId: "DS304", room: "C-301" },
   { day: 4, startTime: "11:15", endTime: "12:15", courseId: "CS301", room: "A-101" },
   { day: 4, startTime: "14:00", endTime: "16:00", courseId: "DS365", room: "Lab-3" },
 ];
+
 
 export const TIMETABLE = DEFAULT_TIMETABLE.filter(slot =>
   COURSES.some(course => course.id === slot.courseId)
