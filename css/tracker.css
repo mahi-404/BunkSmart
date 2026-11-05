@@ -508,6 +508,83 @@
 
 .predict-modal.open .predict-box { transform: scale(1); }
 
+/* ── Danger Zone Pulse Animation ───────────────────────────── */
+@keyframes dangerPulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4), var(--shadow-sm);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.2), 0 8px 24px rgba(239, 68, 68, 0.25);
+    border-color: #f87171;
+  }
+}
+
+.course-card.danger-card {
+  border-color: #fca5a5;
+  background: linear-gradient(180deg, #ffffff 0%, #fff5f5 100%);
+  animation: dangerPulse 2.5s infinite;
+}
+
+.danger-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  letter-spacing: 0.05em;
+}
+
+/* ── Daily Check-in Banner ─────────────────────────────────── */
+.daily-banner {
+  background: linear-gradient(135deg, #f5f0ff 0%, #ede9fe 100%);
+  border: 1.5px solid #ddd6fe;
+  border-radius: var(--radius-2xl);
+  padding: var(--space-5) var(--space-6);
+  margin-bottom: var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  box-shadow: 0 4px 16px rgba(167, 139, 250, 0.12);
+}
+
+.daily-banner__left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.daily-banner__icon {
+  font-size: 2.2rem;
+  background: white;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+  border: 1.5px solid #e9d5ff;
+}
+
+.daily-banner__title {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-extrabold);
+  color: var(--clr-text);
+  margin-bottom: 2px;
+}
+
+.daily-banner__sub {
+  font-size: var(--fs-xs);
+  color: var(--clr-text-muted);
+}
+
 /* ── Responsive ─────────────────────────────────────────────── */
 @media (max-width: 640px) {
   .course-grid { grid-template-columns: 1fr; }
@@ -519,4 +596,5 @@
   .story-character img { grid-row: span 2; width: 56px; height: 72px; margin: 0; }
   .story-character__name { align-self: end; }
   .story-character p { margin-top: 2px; }
+  .daily-banner { flex-direction: column; align-items: stretch; }
 }

@@ -11,6 +11,7 @@
 
   <link rel="stylesheet" href="css/variables.css" />
   <link rel="stylesheet" href="css/base.css" />
+  <link rel="stylesheet" href="css/characters.css" />
   <link rel="stylesheet" href="css/tracker.css" />
 </head>
 <body>
@@ -39,12 +40,18 @@
 
 <!-- ══════════════════════════ HEADER ══════════════════════════ -->
 <header class="tracker-header">
-  <div class="container" style="position:relative;z-index:1">
-    <div class="header-eyebrow" style="color:var(--clr-safe)">📋 Attendance Tracker</div>
-    <h1 class="page-header__title">
-      Track Smart, Stay Safe
-    </h1>
-    <p class="page-header__subtitle">Mark your attendance and see if you can afford to skip.</p>
+  <div class="container" style="position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:var(--space-4)">
+    <div>
+      <div class="header-eyebrow" style="color:var(--clr-safe)">📋 Attendance Tracker</div>
+      <h1 class="page-header__title">
+        Track Smart, Stay Safe
+      </h1>
+      <p class="page-header__subtitle">Mark your attendance and know exactly when you can afford to bunk.</p>
+    </div>
+    <div id="student-profile-chip" style="background:rgba(255,255,255,0.9);padding:8px 16px;border-radius:24px;border:1px solid #dfd2ff;display:flex;align-items:center;gap:10px;font-size:var(--fs-xs)">
+      <span>👤 <strong id="student-name-display">Student</strong> (<span id="student-roll-display">Roll #</span>)</span>
+      <a href="index.html" class="btn btn--ghost btn--sm" style="padding:4px 8px;font-size:11px">Switch</a>
+    </div>
   </div>
 </header>
 
@@ -52,6 +59,20 @@
 <!-- ══════════════════════════ MAIN ══════════════════════════ -->
 <main style="padding:2rem 0 4rem">
   <div class="container">
+
+    <!-- Daily check-in banner -->
+    <div class="daily-banner">
+      <div class="daily-banner__left">
+        <div class="daily-banner__icon">☀️</div>
+        <div>
+          <div class="daily-banner__title">Daily Attendance Plan & Check-in</div>
+          <div class="daily-banner__sub">Walk through today's classes step-by-step with Trace and Prof. Maya before deciding.</div>
+        </div>
+      </div>
+      <button class="btn btn--primary" id="btn-open-daily-flow" onclick="window.startDailyPlan()">
+        ☀️ Plan Today's Classes →
+      </button>
+    </div>
 
     <!-- Summary bar -->
     <div class="summary-bar" id="summary-bar"></div>
@@ -103,7 +124,11 @@
           Tap ✅ Present or ❌ Absent after each class
         </div>
       </div>
-      <button class="btn btn--ghost btn--sm" onclick="window.clearAll()">🗑 Reset All</button>
+      <div style="display:flex;gap:var(--space-2);flex-wrap:wrap">
+        <button class="btn btn--ghost btn--sm" id="btn-undo-mark" onclick="window.undoMark()">↩ Undo Last Mark</button>
+        <button class="btn btn--ghost btn--sm" onclick="window.exportCSV()">📥 Export CSV</button>
+        <button class="btn btn--ghost btn--sm" onclick="window.clearAll()">🗑 Reset All</button>
+      </div>
     </div>
 
     <details class="course-manager" id="course-manager">

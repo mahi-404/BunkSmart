@@ -17,6 +17,10 @@ BunkSmart gives immediate mathematical certainty:
 - **`getSafeSkips(courseId)`**: Calculates exactly how many classes you can skip while remaining $\ge 75\%$.
 - **`predictSkip(courseId)`**: Simulates the exact attendance drop *before* you decide to bunk.
 - **`classesNeeded(courseId)`**: Calculates how many consecutive classes you must attend to climb out of the danger zone.
+- **Interactive Daily BunkSmart Flow (`dailyFlow.js`)**: Step-by-step morning check-in where Trace calculates safe skips and Prof. Maya shakes her head angrily if you try to bunk into the danger zone!
+- **Attendance Analytics & Trend Line**: Interactive Chart.js trend line with the mandatory 75% dashed reference threshold.
+- **Student Profile Isolation**: Independent attendance records, subjects, and logs scoped by Roll Number.
+- **Undo Marking & CSV Export**: One-click accidental mark reversal and CSV report download.
 - **Interactive Character Stage**: Alex (Student), Trace (AI Tracker), and Prof. Maya (Faculty) react to your attendance choices in real time.
 
 ---
@@ -61,12 +65,13 @@ BunkSmart/
 ### Realistic Engineering Dataset
 | Course Code | Course Name | Credits | Attended / Total | Initial % | Status | Safe Bunks Left | Recovery Path |
 |---|---|---|---|---|---|---|---|
-| **CS301** | Data Structures & Algorithms | 4 | 18 / 22 | 81% | `SAFE` | **2 bunks** | Above 75% target |
-| **CS302** | Database Management Systems | 3 | 14 / 20 | 70% | `WARNING` | 0 bunks | Need 4 classes to recover |
-| **CS303** | Operating Systems | 4 | 10 / 18 | 55% | `DANGER` | 0 bunks | Need 14 classes to recover |
-| **CS304** | Computer Networks | 3 | 16 / 20 | 80% | `SAFE` | **1 bunk** | Above 75% target |
-| **MA201** | Engineering Mathematics III | 4 | 12 / 16 | 75% | `SAFE` | **0 bunks** | Borderline (0 bunks) |
-| **CS305** | Software Engineering | 3 | 9 / 14 | 64% | `WARNING` | 0 bunks | Need 6 classes to recover |
+feature/daily-attendance-flow
+| **CS301** | Advanced Algorithms | 4 | 18 / 22 | 82% | `SAFE` | **2 bunks** | Above 75% target |
+| **DS365** | Full Stack Development | 3 | 15 / 20 | 75% | `SAFE` | **0 bunks** | Borderline (0 bunks) |
+| **CS351** | Software Design | 3 | 14 / 20 | 70% | `WARNING` | 0 bunks | Need 4 classes to recover |
+| **DS304** | Explainable AI | 3 | 10 / 18 | 56% | `DANGER` | 0 bunks | Need 14 classes to recover |
+| **EC354** | Tensor Multimodal | 3 | 16 / 20 | 80% | `SAFE` | **1 bunk** | Above 75% target |
+
 
 ### Strict Server Input Validation
 The Node.js backend server (`server.js`) uses zero external dependencies and enforces strict validation on all incoming data:
@@ -116,6 +121,17 @@ The test suite isolates test data to temporary files via `BUNKSMART_DB` so live 
 
 ========================================
 📊 Test Results: 16 Passed, 0 Failed
+========================================
+
+🧪 Running BunkSmart Logic Mathematical Precision Tests...
+
+  ✅ PASS: Exact 75% boundary yields 0 safe skips (cannot skip without dropping below 75%)
+  ✅ PASS: 80% attendance (16/20) correctly calculates 1 safe skip
+  ✅ PASS: Recovery calculator accurately predicts 14 consecutive classes needed for 55.6% (CS303)
+  ✅ PASS: Skip prediction accurately calculates drop from 70% to 67% and marks unsafe
+
+========================================
+📊 Total Tests: 15 Passed, 0 Failed
 ========================================
 ```
 

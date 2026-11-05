@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "test": "node test/server.test.js"
+    "test": "node test/server.test.js && node test/logic.test.js"
   },
   "repository": {
     "type": "git",

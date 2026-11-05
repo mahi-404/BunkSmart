@@ -56,6 +56,33 @@
       Track attendance, predict safe skips, get alerts before you cross the line —
       all in one place. Built for students, by students.
     </p>
+    <!-- Student Login -->
+<div class="student-login">
+  <h3>Welcome to BunkSmart 👋</h3>
+  <p>Enter your details to access your personal attendance dashboard.</p>
+
+  <form id="student-login-form">
+    <input
+      type="text"
+      id="student-name"
+      placeholder="Enter your name"
+      required
+    />
+
+    <input
+      type="text"
+      id="student-roll"
+      placeholder="Enter your roll number"
+      required
+    />
+
+    <button type="submit" class="btn btn--primary btn--lg">
+      Continue to BunkSmart →
+    </button>
+  </form>
+
+  <p id="profile-message"></p>
+</div>
 
     <div class="hero-actions">
       <a href="timetable.html" class="btn btn--primary btn--lg">📅 View Timetable</a>
@@ -241,30 +268,80 @@
 <!-- Toast -->
 <div class="toast-container" id="toast-container"></div>
 
+
 <script type="module">
   import { startClock } from "./js/clock.js";
-  import { COURSES }    from "./js/data.js";
+  import { COURSES } from "./js/data.js";
   import { initDialogueStage } from "./js/dialogue.js";
+
+  import {
+    saveStudentProfile,
+    getStudentProfile
+  } from "./js/storage.js";
 
   startClock("navbar-clock");
 
-  // Hero pills — quick stats
+  // Load existing student profile
+  const existingProfile = getStudentProfile();
+
+  const nameInput = document.getElementById("student-name");
+  const rollInput = document.getElementById("student-roll");
+  const loginForm = document.getElementById("student-login-form");
+  const message = document.getElementById("profile-message");
+
+  if (existingProfile) {
+    nameInput.value = existingProfile.name;
+    rollInput.value = existingProfile.rollNumber;
+    message.innerHTML = `Welcome back, <strong>${existingProfile.name}</strong> (${existingProfile.rollNumber})! <a href="tracker.html" style="color:#7c3aed;font-weight:700;margin-left:8px;text-decoration:underline">Go to Tracker & Daily Plan →</a>`;
+  }
+
+  // Handle student login
+  loginForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+
+    const name = nameInput.value.trim();
+    const rollNumber = rollInput.value.trim();
+
+    if (!name || !rollNumber) {
+      message.textContent = "Please enter both details.";
+      return;
+    }
+
+    try {
+      saveStudentProfile({ name, rollNumber });
+
+      message.textContent = `Profile saved for ${name}! Opening your attendance tracker...`;
+
+      // Redirect directly to personal tracker with daily plan
+      setTimeout(() => {
+        window.location.href = "tracker.html";
+      }, 500);
+
+    } catch (error) {
+      message.textContent = error.message;
+    }
+  });
+
+  // Hero pills
   const pills = document.getElementById("hero-pills");
+
   if (pills) {
     pills.innerHTML = [
-      { icon:"📚", text:`${COURSES.length} subjects tracked` },
-      { icon:"⚡", text:"Instant skip prediction" },
-      { icon:"🔔", text:"Smart pre-class alerts" },
+      { icon: "📚", text: `${COURSES.length} subjects tracked` },
+      { icon: "⚡", text: "Instant skip prediction" },
+      { icon: "🔔", text: "Smart pre-class alerts" },
     ].map(p => `
       <div class="hero-pill">
         <span>${p.icon}</span>
         <span>${p.text}</span>
-      </div>`).join("");
+      </div>
+    `).join("");
   }
 
-  // Initialize Person 1's Character Dialogue Stage
+  // Initialize character dialogue stage
   initDialogueStage();
 </script>
+
 
 </body>
 </html>

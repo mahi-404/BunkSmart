@@ -3,14 +3,10 @@
 //  Person 3 owns this file.
 //  Fully integrated with logic.js and backend server.
 // ============================================================
-   import { COURSES, TIMETABLE, DAYS, escapeHtml, getCourse } from "./data.js";
-   import { getAttendance, getStatus, getSafeSkips, classesNeeded } from "./logic.js";
-   import { startClock }                          from "./clock.js";
-   import { startNotifications }                  from "./notify.js";
-
-HEAD
 import { COURSES, TIMETABLE, DAYS, escapeHtml, getCourse } from "./data.js";
-import { getAttendance, getStatus, getSafeSkips, markAttendance, syncState } from "./logic.js";
+import { getAttendance, getStatus, getSafeSkips, predictSkip, classesNeeded, markAttendance, syncState } from "./logic.js";
+import { startClock }                          from "./clock.js";
+import { startNotifications }                  from "./notify.js";
 
 // ── State ──────────────────────────────────────────────────────
 const today       = new Date();
@@ -20,8 +16,8 @@ let   selectedDay = todayIdx >= 0 && todayIdx <= 4 ? todayIdx : 0;
 
 // Course emoji map
 const COURSE_EMOJI = {
-  CS301: "🧩", CS302: "🗃️", CS303: "⚙️",
-  CS304: "🌐", MA201: "📐", CS305: "🛠️",
+  CS301: "🧩", DS365: "💻", CS351: "🛠️",
+  DS304: "🤖", EC354: "⚡",
 };
 
 // Status emoji
@@ -340,13 +336,20 @@ window.openDetail = function(courseId) {
       <div class="sheet-row">
         <span class="sheet-row-key">Recovery Plan</span>
         <span class="sheet-row-val" style="color:${statusClr}">
-<<<<<<< HEAD
-          ${classesNeeded(courseId) === 0 ? "Already safe 🎉" : classesNeeded(courseId) + " more"}
-=======
-          ${percent >= 75 ? "Target achieved 🎉" : "Attend next " + Math.ceil((0.75*total - attended)/0.25) + " consecutive classes"}
->>>>>>> 9951f14849fa72f62d26db9f04f18729146378d6
+          ${classesNeeded(courseId) === 0 ? "Already safe 🎉" : `Attend next ${classesNeeded(courseId)} consecutive class${classesNeeded(courseId) > 1 ? "es" : ""}`}
         </span>
       </div>
+    </div>
+
+    <!-- Skip Predictor for this class -->
+    <div style="background:var(--clr-surface-2);border:1.5px solid var(--clr-border-soft);border-radius:var(--radius-xl);padding:var(--space-3) var(--space-4);margin-bottom:var(--space-4);display:flex;align-items:center;justify-content:space-between;gap:var(--space-2)">
+      <div style="font-size:var(--fs-xs)">
+        <span style="font-weight:700;color:var(--clr-text);display:block">🔮 What if I skip this class?</span>
+        <span style="color:var(--clr-text-muted)">Drops from ${percent}% to <strong style="color:var(--clr-${predictSkip(courseId, 1).status}-text)">${predictSkip(courseId, 1).percent}%</strong></span>
+      </div>
+      <span class="badge badge--${predictSkip(courseId, 1).isSafe ? 'safe' : 'danger'}" style="font-size:10px">
+        ${predictSkip(courseId, 1).isSafe ? '✓ Safe to skip' : '⚠ Danger'}
+      </span>
     </div>
 
     <div style="display:flex;gap:var(--space-2);margin-bottom:var(--space-4)">
