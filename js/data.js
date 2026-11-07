@@ -132,33 +132,33 @@ export function escapeHtml(value) {
 const DEFAULT_TIMETABLE = [
   // Monday
   { day: 0, startTime: "09:00", endTime: "10:00", courseId: "CS301", room: "A-101" },
-  { day: 0, startTime: "10:00", endTime: "11:00", courseId: "EC354", room: "B-201" },
-  { day: 0, startTime: "11:15", endTime: "12:15", courseId: "CS351", room: "A-201" },
-  { day: 0, startTime: "14:00", endTime: "15:00", courseId: "DS304", room: "C-301" },
+  { day: 0, startTime: "10:00", endTime: "11:00", courseId: "EC303", room: "B-201" },
+  { day: 0, startTime: "11:15", endTime: "12:15", courseId: "CS305", room: "A-201" },
+  { day: 0, startTime: "14:00", endTime: "15:00", courseId: "DS301", room: "C-301" },
 
   // Tuesday
-  { day: 1, startTime: "09:00", endTime: "10:00", courseId: "DS365", room: "B-102" },
-  { day: 1, startTime: "10:00", endTime: "11:00", courseId: "DS304", room: "A-301" },
-  { day: 1, startTime: "11:15", endTime: "12:15", courseId: "EC354", room: "B-201" },
+  { day: 1, startTime: "09:00", endTime: "10:00", courseId: "DS301", room: "B-102" },
+  { day: 1, startTime: "10:00", endTime: "11:00", courseId: "CS304", room: "A-301" },
+  { day: 1, startTime: "11:15", endTime: "12:15", courseId: "EC303", room: "B-201" },
   { day: 1, startTime: "14:00", endTime: "16:00", courseId: "CS301", room: "Lab-1" },
 
   // Wednesday
-  { day: 2, startTime: "09:00", endTime: "10:00", courseId: "CS351", room: "A-201" },
-  { day: 2, startTime: "10:00", endTime: "11:00", courseId: "CS301", room: "A-101" },
-  { day: 2, startTime: "11:15", endTime: "12:15", courseId: "DS365", room: "B-102" },
-  { day: 2, startTime: "14:00", endTime: "16:00", courseId: "DS304", room: "Lab-2" },
+  { day: 2, startTime: "09:00", endTime: "10:00", courseId: "CS301", room: "A-201" },
+  { day: 2, startTime: "10:00", endTime: "11:00", courseId: "CS304", room: "A-101" },
+  { day: 2, startTime: "11:15", endTime: "12:15", courseId: "DS301", room: "B-102" },
+  { day: 2, startTime: "14:00", endTime: "16:00", courseId: "CS305", room: "Lab-2" },
 
   // Thursday
-  { day: 3, startTime: "09:00", endTime: "10:00", courseId: "EC354", room: "B-201" },
-  { day: 3, startTime: "10:00", endTime: "11:00", courseId: "DS304", room: "C-301" },
-  { day: 3, startTime: "11:15", endTime: "12:15", courseId: "DS304", room: "A-301" },
-  { day: 3, startTime: "14:00", endTime: "15:00", courseId: "DS365", room: "B-102" },
+  { day: 3, startTime: "09:00", endTime: "10:00", courseId: "EC303", room: "B-201" },
+  { day: 3, startTime: "10:00", endTime: "11:00", courseId: "DS301", room: "C-301" },
+  { day: 3, startTime: "11:15", endTime: "12:15", courseId: "CS304", room: "A-301" },
+  { day: 3, startTime: "14:00", endTime: "15:00", courseId: "CS305", room: "B-102" },
 
   // Friday
-  { day: 4, startTime: "09:00", endTime: "10:00", courseId: "CS351", room: "A-201" },
-  { day: 4, startTime: "10:00", endTime: "11:00", courseId: "DS304", room: "C-301" },
+  { day: 4, startTime: "09:00", endTime: "10:00", courseId: "CS305", room: "A-201" },
+  { day: 4, startTime: "10:00", endTime: "11:00", courseId: "DS301", room: "C-301" },
   { day: 4, startTime: "11:15", endTime: "12:15", courseId: "CS301", room: "A-101" },
-  { day: 4, startTime: "14:00", endTime: "16:00", courseId: "DS365", room: "Lab-3" },
+  { day: 4, startTime: "14:00", endTime: "16:00", courseId: "CS304", room: "Lab-3" },
 ];
 
 
